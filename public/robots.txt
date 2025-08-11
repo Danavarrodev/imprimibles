@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://imprimibles.vercel.app/sitemap-index.xml
