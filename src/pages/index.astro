@@ -46,8 +46,19 @@ const subjects = Array.from(new Set(items.map(i => i.data.subject)));
       <h2 class="text-xl font-semibold">Últimos añadidos</h2>
       <a href="/imprimibles/" class="text-sm text-slate-600 hover:underline">Ver todos</a>
     </div>
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {latest.map(item => <CardImprimible item={item} />)}
-    </div>
+   <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  {latest.map(({ data, slug }) => (
+    <CardImprimible
+      title={data.title}
+      description={data.description}
+      cover={data.cover}
+      subject={data.subject}
+      level={data.level}
+      slug={slug}
+      pdf={data.pdf}
+    />
+  ))}
+</div>
+
   </section>
 </BaseLayout>

@@ -1,56 +1,158 @@
 ---
+import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import CardImprimible from "../../components/CardImprimible.astro";
-import { getCollection } from "astro:content";
 
-const items = await getCollection("imprimibles");
-const sorted = items.sort((a,b) => +b.data.date - +a.data.date);
+// Contenido
+const all = await getCollection("imprimibles");
+
+// Opciones filtros
+const subjects = Array.from(new Set(all.map(x => x.data.subject))).filter(Boolean).sort();
+const levels = Array.from(new Set(all.map(x => x.data.level))).filter(Boolean).sort();
+
+// Mapeo a items para la vista
+const items = all.map(x => ({
+  slug: x.slug,
+  title: x.data.title,
+  description: x.data.description,
+  cover: x.data.cover,
+  subject: x.data.subject,
+  level: x.data.level,
+  pdf: x.data.pdf
+}));
 ---
-<BaseLayout title="Imprimibles | Descarga directa" description="Listado de imprimibles por fecha.">
-  <h1 class="text-2xl font-bold mb-6">Imprimibles</h1>
 
-  <div id="filtersInfo" class="mb-4 text-sm text-slate-600 hidden"></div>
-
-  <div id="grid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    {sorted.map(item => (
-      <div data-card data-subject={item.data.subject} data-level={item.data.level}>
-        <CardImprimible item={item} />
+<BaseLayout title="Imprimibles | Filtra por asignatura y nivel" description="Descarga imprimibles por asignatura y nivel.">
+  <main class="bg-gray-50">
+    <!-- HERO -->
+    <section class="mx-auto max-w-7xl px-4 pt-10 pb-6">
+      <div class="rounded-2xl bg-white/60 ring-1 ring-gray-200 p-6 md:p-8">
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Imprimibles</h1>
+        <p class="mt-2 text-gray-600 max-w-2xl">
+          Encuentra materiales listos para descargar. Filtra por asignatura y nivel, o explora todo el catálogo.
+        </p>
+        <!-- accesos rápidos opcionales -->
+        <div class="mt-4 flex flex-wrap gap-2">
+          {subjects.slice(0,6).map(s => (
+            <button class="quick-chip rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
+              data-quick="subject" data-value={s}>{s}</button>
+          ))}
+          {levels.slice(0,4).map(l => (
+            <button class="quick-chip rounded-full bg-gray-900 text-white px-3 py-1.5 text-sm hover:opacity-90"
+              data-quick="level" data-value={l}>{l}</button>
+          ))}
+        </div>
       </div>
-    ))}
-  </div>
+    </section>
 
-  <p id="noResults" class="text-slate-500 mt-6 hidden">No hay imprimibles que coincidan con este filtro.</p>
+    <!-- FILTROS (sticky) -->
+    <section class="sticky top-0 z-10 border-b border-gray-200 bg-white/90 backdrop-blur">
+      <div class="mx-auto max-w-7xl px-4 py-3">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div class="flex items-center gap-3">
+            <label class="text-sm text-gray-700 flex items-center gap-2">
+              Asignatura
+              <select id="f-subject" class="rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900" data-filter="subject">
+                <option value="">Todas</option>
+                {subjects.map(s => <option value={s}>{s}</option>)}
+              </select>
+            </label>
+            <label class="text-sm text-gray-700 flex items-center gap-2">
+              Nivel
+              <select id="f-level" class="rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900" data-filter="level">
+                <option value="">Todos</option>
+                {levels.map(l => <option value={l}>{l}</option>)}
+              </select>
+            </label>
+          </div>
+          <div class="flex items-center gap-3">
+            <input id="f-search" type="search" placeholder="Buscar por título…" class="w-64 rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900" />
+            <button type="button" id="f-clear" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50">Limpiar</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <script>
-    // Filtrado en cliente por query (?subject=...&level=...)
-    const params = new URLSearchParams(location.search);
-    const s = params.get('subject')?.toLowerCase();
-    const l = params.get('level')?.toLowerCase();
+    <!-- GRID -->
+    <section class="mx-auto max-w-7xl px-4 py-8">
+      <div id="cards" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {items.map(it => (
+          <CardImprimible
+            title={it.title}
+            description={it.description}
+            cover={it.cover}
+            subject={it.subject}
+            level={it.level}
+            slug={it.slug}
+            pdf={it.pdf}
+          />
+        ))}
+      </div>
 
-    const cards = Array.from(document.querySelectorAll('[data-card]'));
-    let visible = 0;
+      <!-- Estado vacío -->
+      <div id="empty" class="hidden mt-10 rounded-xl border border-dashed p-12 text-center text-gray-600">
+        No hay resultados con esos filtros.
+      </div>
+    </section>
+  </main>
 
-    cards.forEach(card => {
-      const cs = card.dataset.subject?.toLowerCase();
-      const cl = card.dataset.level?.toLowerCase();
-      const ok = (!s || cs === s) && (!l || cl === l);
-      card.style.display = ok ? '' : 'none';
-      if (ok) visible++;
-    });
+  <!-- Script de filtrado rápido (cliente) -->
+  <script is:raw>
+    (function(){
+      const $cards = document.getElementById('cards');
+      const $empty = document.getElementById('empty');
+      const $subject = document.getElementById('f-subject');
+      const $level = document.getElementById('f-level');
+      const $search = document.getElementById('f-search');
+      const $clear = document.getElementById('f-clear');
 
-    // UI de filtros activos
-    const info = document.getElementById('filtersInfo');
-    if (s || l) {
-      info.classList.remove('hidden');
-      info.innerHTML = `
-        Filtrando por:
-        ${s ? `<span class="ml-1 px-2 py-1 bg-slate-100 rounded">${s}</span>` : ''}
-        ${l ? `<span class="ml-1 px-2 py-1 bg-slate-100 rounded">${l}</span>` : ''}
-        <a class="ml-3 underline" href="/imprimibles/">Quitar filtros</a>
-      `;
-    }
+      // Indexa las tarjetas leyendo data-attrs que pondremos en cada card
+      const data = Array.from($cards.children).map(card => ({
+        card,
+        subject: card.getAttribute('data-subject') || '',
+        level: card.getAttribute('data-level') || '',
+        title: (card.getAttribute('data-title') || '').toLowerCase(),
+      }));
 
-    // Mensaje sin resultados
-    document.getElementById('noResults').classList.toggle('hidden', visible > 0);
+      function apply(){
+        const fs = ($subject.value || '');
+        const fl = ($level.value || '');
+        const q = ($search.value || '').toLowerCase().trim();
+
+        let visible = 0;
+        for (const it of data) {
+          const okS = !fs || it.subject === fs;
+          const okL = !fl || it.level === fl;
+          const okQ = !q || it.title.includes(q);
+          const show = okS && okL && okQ;
+          it.card.style.display = show ? '' : 'none';
+          if (show) visible++;
+        }
+        if (visible === 0) { $empty.classList.remove('hidden'); }
+        else { $empty.classList.add('hidden'); }
+      }
+
+      [$subject,$level,$search].forEach(el => el && el.addEventListener('input', apply));
+      $clear?.addEventListener('click', () => { $subject.value=''; $level.value=''; $search.value=''; apply(); });
+
+      // accesos rápidos
+      document.querySelectorAll('.quick-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const type = btn.getAttribute('data-quick');
+          const val = btn.getAttribute('data-value') || '';
+          if (type === 'subject') $subject.value = val;
+          if (type === 'level') $level.value = val;
+          apply();
+          window.scrollTo({ top: document.querySelector('section.sticky').offsetTop, behavior: 'smooth' });
+        });
+      });
+
+      apply();
+    })();
   </script>
+
+  <style is:global>
+    /* toque sutil para chips focus */
+    .quick-chip:focus-visible{ outline: 2px solid currentColor; outline-offset: 2px; }
+  </style>
 </BaseLayout>
