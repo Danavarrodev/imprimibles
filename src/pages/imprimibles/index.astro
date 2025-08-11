@@ -5,39 +5,52 @@ import { getCollection } from "astro:content";
 
 const items = await getCollection("imprimibles");
 const sorted = items.sort((a,b) => +b.data.date - +a.data.date);
-
-// Leer parámetros de la URL
-const url = new URL(Astro.request.url);
-const subjectFilter = url.searchParams.get("subject");
-const levelFilter = url.searchParams.get("level");
-
-// Filtrar si hay parámetros
-let filtered = sorted;
-if (subjectFilter) {
-  filtered = filtered.filter(i => i.data.subject.toLowerCase() === subjectFilter.toLowerCase());
-}
-if (levelFilter) {
-  filtered = filtered.filter(i => i.data.level.toLowerCase() === levelFilter.toLowerCase());
-}
 ---
 <BaseLayout title="Imprimibles | Descarga directa" description="Listado de imprimibles por fecha.">
   <h1 class="text-2xl font-bold mb-6">Imprimibles</h1>
 
-  <!-- Mostrar filtros activos -->
-  {(subjectFilter || levelFilter) && (
-    <div class="mb-4 text-sm text-slate-600">
-      Filtrando por:
-      {subjectFilter && <span class="ml-1 px-2 py-1 bg-slate-100 rounded">{subjectFilter}</span>}
-      {levelFilter && <span class="ml-1 px-2 py-1 bg-slate-100 rounded">{levelFilter}</span>}
-      <a href="/imprimibles/" class="ml-3 underline">Quitar filtros</a>
-    </div>
-  )}
+  <div id="filtersInfo" class="mb-4 text-sm text-slate-600 hidden"></div>
 
-  <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    {filtered.map(item => <CardImprimible item={item} />)}
+  <div id="grid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {sorted.map(item => (
+      <div data-card data-subject={item.data.subject} data-level={item.data.level}>
+        <CardImprimible item={item} />
+      </div>
+    ))}
   </div>
 
-  {filtered.length === 0 && (
-    <p class="text-slate-500 mt-6">No hay imprimibles que coincidan con este filtro.</p>
-  )}
+  <p id="noResults" class="text-slate-500 mt-6 hidden">No hay imprimibles que coincidan con este filtro.</p>
+
+  <script>
+    // Filtrado en cliente por query (?subject=...&level=...)
+    const params = new URLSearchParams(location.search);
+    const s = params.get('subject')?.toLowerCase();
+    const l = params.get('level')?.toLowerCase();
+
+    const cards = Array.from(document.querySelectorAll('[data-card]'));
+    let visible = 0;
+
+    cards.forEach(card => {
+      const cs = card.dataset.subject?.toLowerCase();
+      const cl = card.dataset.level?.toLowerCase();
+      const ok = (!s || cs === s) && (!l || cl === l);
+      card.style.display = ok ? '' : 'none';
+      if (ok) visible++;
+    });
+
+    // UI de filtros activos
+    const info = document.getElementById('filtersInfo');
+    if (s || l) {
+      info.classList.remove('hidden');
+      info.innerHTML = `
+        Filtrando por:
+        ${s ? `<span class="ml-1 px-2 py-1 bg-slate-100 rounded">${s}</span>` : ''}
+        ${l ? `<span class="ml-1 px-2 py-1 bg-slate-100 rounded">${l}</span>` : ''}
+        <a class="ml-3 underline" href="/imprimibles/">Quitar filtros</a>
+      `;
+    }
+
+    // Mensaje sin resultados
+    document.getElementById('noResults').classList.toggle('hidden', visible > 0);
+  </script>
 </BaseLayout>
