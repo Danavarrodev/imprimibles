@@ -1,8 +1,53 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import CardImprimible from "../components/CardImprimible.astro";
+import { getCollection } from "astro:content";
+
+// Trae todo, ordena por fecha, y toma los 6 últimos
+const items = await getCollection("imprimibles");
+const sorted = items.sort((a,b) => +b.data.date - +a.data.date);
+const latest = sorted.slice(0, 6);
+
+// Saca categorías (subjects) únicas
+const subjects = Array.from(new Set(items.map(i => i.data.subject)));
 ---
-<BaseLayout title="Inicio">
-  <h1 class="text-2xl font-bold">¡Hola!</h1>
-  <p>La página de inicio está funcionando.</p>
-  <p><a class="underline" href="/imprimibles/">Ir al listado de imprimibles</a></p>
+<BaseLayout title="Imprimibles educativos | Inicio" description="Descarga gratis fichas y actividades por asignatura y nivel.">
+  <!-- HERO -->
+  <section class="grid gap-8 md:grid-cols-2 items-center py-8">
+    <div class="space-y-4">
+      <h1 class="text-4xl font-extrabold leading-tight">Imprimibles educativos listos para usar</h1>
+      <p class="text-slate-600">Recursos por asignatura y nivel, con descarga directa en PDF. Añadimos material nuevo cada semana.</p>
+      <div class="flex gap-3">
+        <a href="/imprimibles/" class="px-5 py-3 rounded-2xl bg-black text-white">Ver todos los imprimibles</a>
+        <a href="/contacto" class="px-5 py-3 rounded-2xl border">Pedir un recurso</a>
+      </div>
+      <div class="text-sm text-slate-500">Gratis · Formato A4 · Listos para imprimir</div>
+    </div>
+    <div class="rounded-2xl border p-6">
+      <p class="text-slate-600">Aquí puedes poner una imagen/cover o una mini vista de algunos recursos.</p>
+    </div>
+  </section>
+
+  <!-- ACCESOS RÁPIDOS A ASIGNATURAS -->
+  {subjects.length > 0 && (
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-3">Explorar por asignatura</h2>
+      <div class="flex flex-wrap gap-2">
+        {subjects.map(s => (
+          <a href={`/imprimibles/?subject=${encodeURIComponent(s)}`} class="px-3 py-2 rounded-xl border text-sm hover:bg-slate-50">{s}</a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- ÚLTIMOS IMPRESOS -->
+  <section class="mb-6">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-semibold">Últimos añadidos</h2>
+      <a href="/imprimibles/" class="text-sm text-slate-600 hover:underline">Ver todos</a>
+    </div>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {latest.map(item => <CardImprimible item={item} />)}
+    </div>
+  </section>
 </BaseLayout>
