@@ -30,9 +30,7 @@ const { title, description, cover, subject, level, slug, pdf } = Astro.props;
       <div class="mt-4 flex items-center gap-2">
         <span class="text-sm text-gray-500">Ver ficha</span>
         {pdf && (
-          <a href={pdf} class="ml-auto inline-flex items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs hover:bg-gray-50">
-            Descargar PDF
-          </a>
+       <a href={pdf.startsWith('/') ? pdf : '/' + pdf}>Descargar PDF</a>
         )}
       </div>
     </div>

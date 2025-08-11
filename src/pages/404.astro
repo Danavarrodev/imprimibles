@@ -1,0 +1,48 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const year = new Date().getFullYear();
+---
+
+<BaseLayout
+  title="Página no encontrada | Imprimibles Educativos"
+  description="La página que buscas no existe o ha sido movida."
+>
+  <section class="min-h-[70vh] flex flex-col md:flex-row items-center justify-center gap-10 text-center md:text-left px-4">
+    <!-- Hero ilustrado -->
+    <div class="flex-1 max-w-md">
+      <img
+        src="/images/404-illustration.svg"
+        alt="Página no encontrada"
+        class="w-full max-w-sm mx-auto"
+        loading="lazy"
+      />
+    </div>
+
+    <!-- Texto y acciones -->
+    <div class="flex-1 max-w-md space-y-5">
+      <h1 class="text-4xl font-extrabold text-slate-900">Ups... no encontramos la página</h1>
+      <p class="text-slate-600">
+        Puede que el enlace esté roto o que la página haya sido eliminada.  
+        No te preocupes, tenemos muchos recursos listos para ti.
+      </p>
+
+      <div class="flex flex-wrap justify-center md:justify-start gap-4">
+        <a
+          href="/"
+          class="px-5 py-3 rounded-xl bg-black text-white hover:bg-slate-800 transition"
+        >
+          Volver al inicio
+        </a>
+        <a
+          href="/imprimibles/"
+          class="px-5 py-3 rounded-xl border hover:bg-slate-50 transition"
+        >
+          Ver imprimibles
+        </a>
+      </div>
+
+      <p class="text-xs text-slate-400 mt-10">© {year} Imprimibles Educativos</p>
+    </div>
+  </section>
+</BaseLayout>

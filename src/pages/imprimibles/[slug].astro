@@ -1,31 +1,49 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getCollection, getEntryBySlug, type CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+
 
 export async function getStaticPaths() {
-  const posts = await getCollection("imprimibles");
-  return posts.map((p) => ({ params: { slug: p.slug } }));
+  const entries = await getCollection("imprimibles");
+  return entries.map((entry) => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
 }
 
-const { slug } = Astro.params;
-const entry = await getEntryBySlug<CollectionEntry<"imprimibles">["collection"]>("imprimibles", slug!);
-if (!entry) throw new Error("Imprimible no encontrado");
+// Props que recibimos desde getStaticPaths
+const { entry } = Astro.props;
 
-const { Content } = await entry.render();
-const { data } = entry;
+const { title, description, cover, pdf, subject, level } = entry.data;
+const ogImage = cover ?? "/og.png";
 ---
-<BaseLayout title={`${data.title} | Imprimibles`} description={data.description} ogImage={data.cover ?? "/og.png"}>
-  <article class="prose max-w-none">
-    <h1>{data.title}</h1>
-    <p class="text-slate-600">{data.description}</p>
-    {data.cover && <img src={data.cover} alt={data.title} class="rounded-xl my-4" />}
-    <div class="my-4 flex flex-wrap gap-2 text-sm">
-      <span class="px-2 py-1 bg-slate-100 rounded">{data.subject}</span>
-      <span class="px-2 py-1 bg-slate-100 rounded">{data.level}</span>
-      {data.tags.map(t => <span class="px-2 py-1 bg-slate-100 rounded">#{t}</span>)}
-    </div>
-    <a href={data.pdf} download class="inline-block px-4 py-2 rounded-xl bg-black text-white">Descargar PDF</a>
-    <hr class="my-6" />
-    <Content />
+
+<BaseLayout
+  title={`${title} | Imprimibles Educativos`}
+  description={description}
+  ogImage={ogImage}
+>
+  <article class="prose max-w-2xl mx-auto py-8">
+    <h1>{title}</h1>
+
+    {cover && (
+      <img src={cover} alt={title} class="w-full rounded-lg" loading="lazy" />
+    )}
+
+    <p class="text-slate-600">{description}</p>
+
+    <ul class="mt-4 text-sm text-slate-500">
+      <li><strong>Asignatura:</strong> {subject}</li>
+      <li><strong>Nivel:</strong> {level}</li>
+    </ul>
+
+    {pdf && (
+      <a
+        href={pdf.startsWith('/') ? pdf : '/' + pdf}  
+        class="mt-6 inline-block px-5 py-3 rounded-xl bg-black text-white hover:bg-slate-800 transition"
+      >
+        Descargar PDF
+      </a>
+    )}
   </article>
 </BaseLayout>
