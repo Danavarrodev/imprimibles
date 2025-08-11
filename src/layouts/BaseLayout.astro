@@ -1,0 +1,35 @@
+---
+import "../styles/global.css"; 
+const { title = "Imprimibles Educativos", description = "Recursos listos para imprimir", ogImage = "/og.png" } = Astro.props;
+---
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+  </head>
+  <body class="min-h-dvh bg-white text-slate-800">
+    <header class="border-b">
+      <nav class="mx-auto max-w-6xl flex items-center justify-between p-4">
+        <a href="/" class="font-bold text-lg">Imprimibles</a>
+        <ul class="flex gap-4">
+          <li><a class="hover:underline" href="/imprimibles/">Imprimibles</a></li>
+          <li><a class="hover:underline" href="/sobre-mi">Sobre mí</a></li>
+          <li><a class="hover:underline" href="/contacto">Contacto</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main class="mx-auto max-w-6xl p-4">
+      <slot />
+    </main>
+    <footer class="mt-10 border-t">
+      <div class="mx-auto max-w-6xl p-4 text-sm text-slate-500">
+        © {new Date().getFullYear()} · Hecho con Astro
+      </div>
+    </footer>
+  </body>
+</html>

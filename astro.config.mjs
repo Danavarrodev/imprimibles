@@ -1,5 +1,6 @@
-// @ts-check
-import { defineConfig } from 'astro/config';
+import sitemap from "@astrojs/sitemap";
 
-// https://astro.build/config
-export default defineConfig({});
+export default {
+  site: "https://TUDOMINIO.com", // cámbialo cuando lo subas
+  integrations: [sitemap()],
+};

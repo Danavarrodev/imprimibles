@@ -1,0 +1,31 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection, getEntryBySlug, type CollectionEntry } from "astro:content";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("imprimibles");
+  return posts.map((p) => ({ params: { slug: p.slug } }));
+}
+
+const { slug } = Astro.params;
+const entry = await getEntryBySlug<CollectionEntry<"imprimibles">["collection"]>("imprimibles", slug!);
+if (!entry) throw new Error("Imprimible no encontrado");
+
+const { Content } = await entry.render();
+const { data } = entry;
+---
+<BaseLayout title={`${data.title} | Imprimibles`} description={data.description} ogImage={data.cover ?? "/og.png"}>
+  <article class="prose max-w-none">
+    <h1>{data.title}</h1>
+    <p class="text-slate-600">{data.description}</p>
+    {data.cover && <img src={data.cover} alt={data.title} class="rounded-xl my-4" />}
+    <div class="my-4 flex flex-wrap gap-2 text-sm">
+      <span class="px-2 py-1 bg-slate-100 rounded">{data.subject}</span>
+      <span class="px-2 py-1 bg-slate-100 rounded">{data.level}</span>
+      {data.tags.map(t => <span class="px-2 py-1 bg-slate-100 rounded">#{t}</span>)}
+    </div>
+    <a href={data.pdf} download class="inline-block px-4 py-2 rounded-xl bg-black text-white">Descargar PDF</a>
+    <hr class="my-6" />
+    <Content />
+  </article>
+</BaseLayout>

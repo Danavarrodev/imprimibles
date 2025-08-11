@@ -1,0 +1,21 @@
+---
+import type { CollectionEntry } from "astro:content";
+const { item } = Astro.props as { item: CollectionEntry<"imprimibles"> };
+const { data, slug } = item;
+---
+<article class="rounded-2xl border p-4 hover:shadow-md transition">
+  {data.cover && <img src={data.cover} alt={data.title} class="mb-3 rounded-xl w-full h-44 object-cover" />}
+  <h3 class="text-lg font-semibold mb-1">
+    <a href={`/imprimibles/${slug}/`} class="hover:underline">{data.title}</a>
+  </h3>
+  <p class="text-sm text-slate-600 line-clamp-2 mb-3">{data.description}</p>
+  <div class="flex flex-wrap gap-2 text-xs text-slate-500 mb-4">
+    <span class="px-2 py-1 bg-slate-100 rounded">{data.subject}</span>
+    <span class="px-2 py-1 bg-slate-100 rounded">{data.level}</span>
+    {data.tags.map(t => <span class="px-2 py-1 bg-slate-100 rounded">{t}</span>)}
+  </div>
+  <div class="flex items-center gap-3">
+    <a href={`/imprimibles/${slug}/`} class="inline-block px-3 py-2 rounded-xl border hover:bg-slate-50">Ver ficha</a>
+    <a href={data.pdf} download class="inline-block px-3 py-2 rounded-xl border hover:bg-slate-50">Descargar PDF</a>
+  </div>
+</article>

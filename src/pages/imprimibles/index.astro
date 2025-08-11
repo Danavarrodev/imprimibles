@@ -1,0 +1,14 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import CardImprimible from "../../components/CardImprimible.astro";
+import { getCollection } from "astro:content";
+
+const items = await getCollection("imprimibles");
+const sorted = items.sort((a,b) => +b.data.date - +a.data.date);
+---
+<BaseLayout title="Imprimibles | Descarga directa" description="Listado de imprimibles por fecha.">
+  <h1 class="text-2xl font-bold mb-6">Imprimibles</h1>
+  <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {sorted.map(item => <CardImprimible item={item} />)}
+  </div>
+</BaseLayout>
