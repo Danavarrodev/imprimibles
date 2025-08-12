@@ -26,6 +26,16 @@ const {
     <meta property="og:description" content={description} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:type" content="website" />
+
+        <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4Z6D976G11"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-4Z6D976G11');
+    </script>
   </head>
 
   <body class="min-h-dvh bg-white text-slate-800 flex flex-col">
