@@ -5,70 +5,66 @@ import SiteFooter from "../components/SiteFooter.astro";
 const {
   title = "Imprimibles Educativos",
   description = "Recursos listos para imprimir",
-  ogImage = "/og.png"
+  ogImage = "/og.png",
 } = Astro.props;
 
 const isProd = import.meta.env.MODE === "production";
-// si configuraste `site` en astro.config.mjs, Astro.url será absoluta
-const canonical = Astro.url?.href ?? "";
-const siteUrl = new URL("/", Astro.site ?? "https://imprimibles.vercel.app").href;
+const site = Astro.site ?? "https://imprimibles.vercel.app";
+const canonical = Astro.url?.href ?? new URL("/", site).href;
+const absOg = new URL(ogImage, site).href;
+
 const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "Imprimibles Educativos",
-  "url": siteUrl,
-  "logo": ogImage
+  name: "Imprimibles Educativos",
+  url: site,
+  logo: absOg,
 };
 ---
 
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>{title}</title>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{title}</title>
 
-    <!-- Tipografía -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <!-- Tipografía -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 
-    <!-- CSS global -->
-    <link rel="stylesheet" href="/src/styles/global.css" />
+  <!-- Canonical -->
+  <link rel="canonical" href={canonical} />
 
-    <!-- Canonical -->
-    {canonical && <link rel="canonical" href={canonical} />}
+  <!-- Meta SEO -->
+  <meta name="description" content={description} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={absOg} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:type" content="website" />
 
-    <!-- Meta SEO -->
-    <meta name="description" content={description} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:image" content={ogImage} />
-    <meta property="og:type" content="website" />
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={absOg} />
 
-    <!-- Twitter Cards -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={ogImage} />
+  <!-- JSON-LD Organization (usar set:html !) -->
+  <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
 
-    <!-- JSON-LD Organization -->
-    <script type="application/ld+json">{JSON.stringify(orgJsonLd)}</script>
+  <!-- Slot para metas/JSON-LD específicas -->
+  <slot name="head" />
 
-    <!-- Slot opcional para meter metas/JSON-LD desde cada página -->
-    <slot name="head" />
-
-    {isProd && (
-      <>
-            <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4Z6D976G11"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
+  {isProd && (
+    <>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-4Z6D976G11"></script>
+      <script>
+        {`window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-
-        gtag('config', 'G-4Z6D976G11');
-    </script>
-      </>
-    )}
-  </head>
+        gtag('config', 'G-4Z6D976G11');`}
+      </script>
+    </>
+  )}
+</head>
 
   <body class="min-h-dvh bg-white text-slate-800 flex flex-col">
     <header class="border-b">
