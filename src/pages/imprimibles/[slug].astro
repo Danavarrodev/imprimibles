@@ -12,48 +12,46 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { title, description, cover, pdf, subject, level, date } = entry.data;
-const ogImage = cover ?? "/og.png";
+
+const site = Astro.site ?? "https://imprimibles.vercel.app";
+const pageUrl = new URL(`/imprimibles/${entry.slug}/`, site).href;
+const absCover = cover ? new URL(cover, site).href : undefined;
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "CreativeWork",            // también puede ser "LearningResource"
-  "name": title,
-  "description": description,
-  "inLanguage": "es",
-  "about": [subject, level].filter(Boolean),
-  "image": cover,
-  "datePublished": date ? new Date(date).toISOString() : undefined,
-  "url": new URL(`/imprimibles/${entry.slug}/`, Astro.site ?? "https://imprimibles.vercel.app").href,
-  "encoding": pdf ? [{
-    "@type": "MediaObject",
-    "fileFormat": "application/pdf",
-    "contentUrl": pdf.startsWith('/') ? new URL(pdf, Astro.site ?? "https://imprimibles.vercel.app").href : pdf
-  }] : undefined
+  "@type": "CreativeWork",
+  name: title,
+  description,
+  inLanguage: "es",
+  about: [subject, level].filter(Boolean),
+  image: absCover,
+  datePublished: date ? new Date(date).toISOString() : undefined,
+  url: pageUrl,
+  encoding: pdf
+    ? [{
+        "@type": "MediaObject",
+        fileFormat: "application/pdf",
+        contentUrl: pdf.startsWith('/') ? new URL(pdf, site).href : pdf
+      }]
+    : undefined
 };
+const ogImage = absCover ?? new URL("/og.png", site).href;
 ---
 
-<BaseLayout
-  title={`${title} | Imprimibles Educativos`}
-  description={description}
-  ogImage={ogImage}
->
-  <!-- Inserta metas/JSON-LD específicos en <head> -->
+<BaseLayout title={`${title} | Imprimibles Educativos`} description={description} ogImage={ogImage}>
   <Fragment slot="head">
-    <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+    <meta property="og:url" content={pageUrl} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </Fragment>
 
   <article class="prose max-w-2xl mx-auto py-8">
     <h1>{title}</h1>
-
     {cover && <img src={cover} alt={title} class="w-full rounded-lg" loading="lazy" />}
-
     <p class="text-slate-600">{description}</p>
-
     <ul class="mt-4 text-sm text-slate-500">
       {subject && <li><strong>Asignatura:</strong> {subject}</li>}
       {level && <li><strong>Nivel:</strong> {level}</li>}
     </ul>
-
     {pdf && (
       <a
         href={pdf.startsWith('/') ? pdf : '/' + pdf}
