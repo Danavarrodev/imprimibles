@@ -7,7 +7,20 @@ const {
   description = "Recursos listos para imprimir",
   ogImage = "/og.png"
 } = Astro.props;
+
+const isProd = import.meta.env.MODE === "production";
+// si configuraste `site` en astro.config.mjs, Astro.url será absoluta
+const canonical = Astro.url?.href ?? "";
+const siteUrl = new URL("/", Astro.site ?? "https://imprimibles.vercel.app").href;
+const orgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Imprimibles Educativos",
+  "url": siteUrl,
+  "logo": ogImage
+};
 ---
+
 <html lang="es">
   <head>
     <meta charset="utf-8" />
@@ -20,6 +33,9 @@ const {
     <!-- CSS global -->
     <link rel="stylesheet" href="/src/styles/global.css" />
 
+    <!-- Canonical -->
+    {canonical && <link rel="canonical" href={canonical} />}
+
     <!-- Meta SEO -->
     <meta name="description" content={description} />
     <meta property="og:title" content={title} />
@@ -27,15 +43,31 @@ const {
     <meta property="og:image" content={ogImage} />
     <meta property="og:type" content="website" />
 
-        <!-- Google tag (gtag.js) -->
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- JSON-LD Organization -->
+    <script type="application/ld+json">{JSON.stringify(orgJsonLd)}</script>
+
+    <!-- Slot opcional para meter metas/JSON-LD desde cada página -->
+    <slot name="head" />
+
+    {isProd && (
+      <>
+            <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-4Z6D976G11"></script>
     <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
 
-    gtag('config', 'G-4Z6D976G11');
+        gtag('config', 'G-4Z6D976G11');
     </script>
+      </>
+    )}
   </head>
 
   <body class="min-h-dvh bg-white text-slate-800 flex flex-col">
@@ -50,12 +82,10 @@ const {
       </nav>
     </header>
 
-    <!-- Contenido -->
     <main class="mx-auto max-w-6xl p-4 flex-1">
       <slot />
     </main>
 
-    <!-- Footer -->
     <SiteFooter />
   </body>
 </html>

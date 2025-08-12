@@ -2,7 +2,6 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
 
-
 export async function getStaticPaths() {
   const entries = await getCollection("imprimibles");
   return entries.map((entry) => ({
@@ -11,11 +10,26 @@ export async function getStaticPaths() {
   }));
 }
 
-// Props que recibimos desde getStaticPaths
 const { entry } = Astro.props;
-
-const { title, description, cover, pdf, subject, level } = entry.data;
+const { title, description, cover, pdf, subject, level, date } = entry.data;
 const ogImage = cover ?? "/og.png";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",            // también puede ser "LearningResource"
+  "name": title,
+  "description": description,
+  "inLanguage": "es",
+  "about": [subject, level].filter(Boolean),
+  "image": cover,
+  "datePublished": date ? new Date(date).toISOString() : undefined,
+  "url": new URL(`/imprimibles/${entry.slug}/`, Astro.site ?? "https://imprimibles.vercel.app").href,
+  "encoding": pdf ? [{
+    "@type": "MediaObject",
+    "fileFormat": "application/pdf",
+    "contentUrl": pdf.startsWith('/') ? new URL(pdf, Astro.site ?? "https://imprimibles.vercel.app").href : pdf
+  }] : undefined
+};
 ---
 
 <BaseLayout
@@ -23,24 +37,28 @@ const ogImage = cover ?? "/og.png";
   description={description}
   ogImage={ogImage}
 >
+  <!-- Inserta metas/JSON-LD específicos en <head> -->
+  <Fragment slot="head">
+    <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+  </Fragment>
+
   <article class="prose max-w-2xl mx-auto py-8">
     <h1>{title}</h1>
 
-    {cover && (
-      <img src={cover} alt={title} class="w-full rounded-lg" loading="lazy" />
-    )}
+    {cover && <img src={cover} alt={title} class="w-full rounded-lg" loading="lazy" />}
 
     <p class="text-slate-600">{description}</p>
 
     <ul class="mt-4 text-sm text-slate-500">
-      <li><strong>Asignatura:</strong> {subject}</li>
-      <li><strong>Nivel:</strong> {level}</li>
+      {subject && <li><strong>Asignatura:</strong> {subject}</li>}
+      {level && <li><strong>Nivel:</strong> {level}</li>}
     </ul>
 
     {pdf && (
       <a
-        href={pdf.startsWith('/') ? pdf : '/' + pdf}  
+        href={pdf.startsWith('/') ? pdf : '/' + pdf}
         class="mt-6 inline-block px-5 py-3 rounded-xl bg-black text-white hover:bg-slate-800 transition"
+        onClick={`window.gtag && gtag('event','download_pdf',{item:'${entry.slug}',subject:'${subject}',level:'${level}'});`}
       >
         Descargar PDF
       </a>
