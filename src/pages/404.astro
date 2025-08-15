@@ -1,14 +1,20 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
 
 const year = new Date().getFullYear();
+
+// Obtener últimos imprimibles
+const latest = (await getCollection("imprimibles"))
+  .sort((a,b) => new Date(b.data?.date ?? 0) - new Date(a.data?.date ?? 0))
+  .slice(0, 6);
 ---
 
 <BaseLayout
   title="Página no encontrada | Imprimibles Educativos"
-  description="La página que buscas no existe o ha sido movida."
+  description="La página que buscas no existe o ha sido movida. Explora nuestros imprimibles y recursos educativos."
 >
-  <section class="min-h-[70vh] flex flex-col md:flex-row items-center justify-center gap-10 text-center md:text-left px-4">
+  <section class="min-h-[60vh] flex flex-col md:flex-row items-center justify-center gap-10 text-center md:text-left px-4 py-10">
     <!-- Hero ilustrado -->
     <div class="flex-1 max-w-md">
       <img
@@ -24,7 +30,7 @@ const year = new Date().getFullYear();
       <h1 class="text-4xl font-extrabold text-slate-900">Ups... no encontramos la página</h1>
       <p class="text-slate-600">
         Puede que el enlace esté roto o que la página haya sido eliminada.  
-        No te preocupes, tenemos muchos recursos listos para ti.
+        No te preocupes, tenemos muchos <strong>imprimibles educativos</strong> y recursos listos para ti.
       </p>
 
       <div class="flex flex-wrap justify-center md:justify-start gap-4">
@@ -45,4 +51,30 @@ const year = new Date().getFullYear();
       <p class="text-xs text-slate-400 mt-10">© {year} Imprimibles Educativos</p>
     </div>
   </section>
+
+  {latest.length > 0 && (
+    <section class="max-w-6xl mx-auto px-4 py-12">
+      <h2 class="text-2xl font-bold mb-6">Últimos imprimibles añadidos</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {latest.map(e => (
+          <a
+            href={`/imprimibles/${e.slug}/`}
+            class="block rounded-2xl overflow-hidden border hover:shadow transition"
+          >
+            <img
+              src={e.data.cover ?? "/og.png"}
+              alt={e.data.title}
+              loading="lazy"
+              decoding="async"
+              class="w-full aspect-[4/3] object-cover"
+            />
+            <div class="p-3">
+              <h3 class="font-semibold line-clamp-2">{e.data.title}</h3>
+              <p class="text-sm text-slate-500 line-clamp-2">{e.data.description}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
 </BaseLayout>
