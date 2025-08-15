@@ -123,6 +123,17 @@ const related = all
       )}
     </ul>
 
+    <ul class="mt-2 text-sm">
+      {subject && (
+        <li>
+          <a class="underline hover:no-underline" href={`/imprimibles/asignatura/${subject}/`}>
+            Ver más de {subject}
+          </a>
+        </li>
+      )}
+    </ul>
+
+
     {pdfUrl && (
       <a
         href={pdfUrl}
