@@ -11,55 +11,157 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { title, description, cover, pdf, subject, level, date } = entry.data;
+const { title, description, cover, pdf, subject, level, date, tags } = entry.data;
 
 const site = Astro.site ?? "https://imprimibles.vercel.app";
 const pageUrl = new URL(`/imprimibles/${entry.slug}/`, site).href;
-const absCover = cover ? new URL(cover, site).href : undefined;
 
+// Imagen de portada (absoluta para OG/Twitter y JSON-LD)
+const absCover = cover ? new URL(cover, site).href : undefined;
+const ogImage = absCover ?? new URL("/og.png", site).href;
+
+// PDF absoluto (tanto para JSON-LD como para el enlace)
+const pdfUrl = pdf
+  ? (pdf.startsWith("http://") || pdf.startsWith("https://")
+      ? pdf
+      : new URL(pdf.startsWith("/") ? pdf : `/${pdf}`, site).href)
+  : undefined;
+
+// JSON-LD principal (recurso educativo)
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "CreativeWork",
+  "@type": "LearningResource",
   name: title,
   description,
   inLanguage: "es",
-  about: [subject, level].filter(Boolean),
+  educationalLevel: level || undefined,
+  about: subject || undefined,
   image: absCover,
   datePublished: date ? new Date(date).toISOString() : undefined,
   url: pageUrl,
-  encoding: pdf
+  keywords: Array.isArray(tags) && tags.length ? tags.join(", ") : undefined,
+  encoding: pdfUrl
     ? [{
         "@type": "MediaObject",
         fileFormat: "application/pdf",
-        contentUrl: pdf.startsWith('/') ? new URL(pdf, site).href : pdf
+        contentUrl: pdfUrl
       }]
     : undefined
 };
-const ogImage = absCover ?? new URL("/og.png", site).href;
+
+// JSON-LD de breadcrumbs
+const breadcrumbsLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Imprimibles",
+      item: new URL("/imprimibles/", site).href
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: title,
+      item: pageUrl
+    }
+  ]
+};
+
+// Imprimibles relacionados
+const all = await getCollection("imprimibles");
+const related = all
+  .filter(e => e.slug !== entry.slug)
+  .filter(e => {
+    const d = e.data || {};
+    const sameSubject = subject && d.subject && d.subject === subject;
+    const sameLevel = level && d.level && d.level === level;
+    return sameSubject || sameLevel;
+  })
+  .sort((a, b) => {
+    const da = new Date(a.data?.date ?? 0).getTime();
+    const db = new Date(b.data?.date ?? 0).getTime();
+    return db - da;
+  })
+  .slice(0, 3);
 ---
 
-<BaseLayout title={`${title} | Imprimibles Educativos`} description={description} ogImage={ogImage}>
+<BaseLayout
+  title={`${title} | Imprimibles Educativos`}
+  description={description}
+  ogImage={ogImage}
+  ogType="article"
+>
   <Fragment slot="head">
+    <link rel="canonical" href={pageUrl} />
     <meta property="og:url" content={pageUrl} />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbsLd)} />
   </Fragment>
 
   <article class="prose max-w-2xl mx-auto py-8">
     <h1>{title}</h1>
-    {cover && <img src={cover} alt={title} class="w-full rounded-lg" loading="lazy" />}
+
+    {cover && (
+      <img
+        src={cover}
+        alt={`Portada de "${title}"`}
+        class="w-full rounded-lg"
+        loading="lazy"
+        decoding="async"
+      />
+    )}
+
     <p class="text-slate-600">{description}</p>
+
     <ul class="mt-4 text-sm text-slate-500">
       {subject && <li><strong>Asignatura:</strong> {subject}</li>}
       {level && <li><strong>Nivel:</strong> {level}</li>}
+      {Array.isArray(tags) && tags.length > 0 && (
+        <li><strong>Etiquetas:</strong> {tags.join(", ")}</li>
+      )}
     </ul>
-    {pdf && (
+
+    {pdfUrl && (
       <a
-        href={pdf.startsWith('/') ? pdf : '/' + pdf}
+        href={pdfUrl}
         class="mt-6 inline-block px-5 py-3 rounded-xl bg-black text-white hover:bg-slate-800 transition"
         onClick={`window.gtag && gtag('event','download_pdf',{item:'${entry.slug}',subject:'${subject}',level:'${level}'});`}
       >
         Descargar PDF
       </a>
+    )}
+
+    {related.length > 0 && (
+      <section class="mt-12">
+        <h2 class="text-xl font-semibold mb-4">Imprimibles relacionados</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {related.map(r => {
+            const rCover = r.data?.cover ?? "/og.png";
+            const rHref = `/imprimibles/${r.slug}/`;
+            return (
+              <a href={rHref} class="block rounded-2xl overflow-hidden border hover:shadow transition">
+                <img
+                  src={rCover}
+                  alt={r.data?.title}
+                  loading="lazy"
+                  decoding="async"
+                  class="w-full aspect-[4/3] object-cover"
+                />
+                <div class="p-3">
+                  <h3 class="font-semibold line-clamp-2">{r.data?.title}</h3>
+                  <p class="text-sm text-slate-500 line-clamp-2">{r.data?.description}</p>
+                  <div class="mt-2 text-xs text-slate-500">
+                    {r.data?.subject && <span>{r.data.subject}</span>}
+                    {r.data?.level && <span> · {r.data.level}</span>}
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </section>
     )}
   </article>
 </BaseLayout>
