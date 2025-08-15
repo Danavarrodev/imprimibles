@@ -2,56 +2,86 @@
 import "../styles/global.css";
 import SiteFooter from "../components/SiteFooter.astro";
 
+/** Props configurables desde cada página */
 const {
   title = "Imprimibles Educativos",
   description = "Recursos listos para imprimir",
   ogImage = "/og.png",
+  ogType = "website",     // usa "article" en fichas
+  twitterSite = ""        // ej: "@tuusuario" (opcional)
 } = Astro.props;
 
+/** Entorno y URLs */
 const isProd = import.meta.env.MODE === "production";
 const site = Astro.site ?? "https://imprimibles.vercel.app";
 const canonical = Astro.url?.href ?? new URL("/", site).href;
-const absOg = new URL(ogImage, site).href;
 
+/** Asegura ogImage absoluto */
+const absOg = ogImage.startsWith("http")
+  ? ogImage
+  : new URL(ogImage, site).href;
+
+/** JSON-LD de organización (logo = ogImage por simplicidad) */
 const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "Imprimibles Educativos",
   url: site,
-  logo: absOg,
+  logo: absOg
 };
 ---
 
+<!doctype html>
+<html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{title}</title>
 
-  <!-- Tipografía -->
+  <!-- Perf: Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 
-  <!-- Canonical -->
+  <!-- Canonical / Hreflang -->
   <link rel="canonical" href={canonical} />
+  <link rel="alternate" hrefLang="es-ES" href={canonical} />
+
+  <!-- Favicon / PWA (ajusta si ya los tienes) -->
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#111827" />
 
   <!-- Meta SEO -->
   <meta name="description" content={description} />
+  <meta property="og:site_name" content="Imprimibles Educativos" />
+  <meta property="og:locale" content="es_ES" />
+  <meta property="og:type" content={ogType} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={absOg} />
   <meta property="og:url" content={canonical} />
-  <meta property="og:type" content="website" />
+  <!-- (Opcional) Dimensiones del OG si son fijas
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  -->
 
-  <!-- Twitter Cards -->
+  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
+  {twitterSite && <meta name="twitter:site" content={twitterSite} />}
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={absOg} />
 
-  <!-- JSON-LD Organization (usar set:html !) -->
+  <!-- JSON-LD Organization -->
   <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
 
-  <!-- Slot para metas/JSON-LD específicas -->
+  <!-- Slot para metas/JSON-LD específicas (p. ej., en [slug].astro) -->
   <slot name="head" />
+
+  {/* Evita indexación en entornos no productivos */}
+  {!isProd && <meta name="robots" content="noindex,nofollow" />}
 
   {isProd && (
     <>
@@ -66,22 +96,22 @@ const orgJsonLd = {
   )}
 </head>
 
-  <body class="min-h-dvh bg-white text-slate-800 flex flex-col">
-    <header class="border-b">
-      <nav class="mx-auto max-w-6xl flex items-center justify-between p-4">
-        <a href="/" class="font-bold text-lg">Imprimibles</a>
-        <ul class="flex gap-4">
-          <li><a class="hover:underline" href="/imprimibles/">Imprimibles</a></li>
-          <li><a class="hover:underline" href="/sobre-mi">Sobre mí</a></li>
-          <li><a class="hover:underline" href="/contacto">Contacto</a></li>
-        </ul>
-      </nav>
-    </header>
+<body class="min-h-dvh bg-white text-slate-800 flex flex-col">
+  <header class="border-b">
+    <nav class="mx-auto max-w-6xl flex items-center justify-between p-4">
+      <a href="/" class="font-bold text-lg">Imprimibles</a>
+      <ul class="flex gap-4">
+        <li><a class="hover:underline" href="/imprimibles/">Imprimibles</a></li>
+        <li><a class="hover:underline" href="/sobre-mi">Sobre mí</a></li>
+        <li><a class="hover:underline" href="/contacto">Contacto</a></li>
+      </ul>
+    </nav>
+  </header>
 
-    <main class="mx-auto max-w-6xl p-4 flex-1">
-      <slot />
-    </main>
+  <main class="mx-auto max-w-6xl p-4 flex-1">
+    <slot />
+  </main>
 
-    <SiteFooter />
-  </body>
+  <SiteFooter />
+</body>
 </html>
