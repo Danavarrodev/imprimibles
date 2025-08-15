@@ -1,0 +1,42 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("imprimibles");
+  const subjects = Array.from(new Set(entries.map(e => e.data?.subject).filter(Boolean)));
+  return subjects.map(s => ({ params: { subject: s }, props: { subject: s } }));
+}
+
+const { subject } = Astro.props;
+const all = await getCollection("imprimibles");
+const list = all
+  .filter(e => e.data?.subject === subject)
+  .sort((a,b) => new Date(b.data?.date ?? 0) - new Date(a.data?.date ?? 0));
+---
+
+<BaseLayout
+  title={`${subject} | Imprimibles Educativos`}
+  description={`Imprimibles de ${subject}. Descarga y utiliza en clase o en casa.`}
+  ogType="website"
+>
+  <section class="max-w-6xl mx-auto py-8">
+    <h1 class="text-2xl font-bold">Imprimibles de {subject}</h1>
+
+    {list.length === 0 && (
+      <p class="mt-4 text-slate-600">Aún no hay imprimibles en esta asignatura.</p>
+    )}
+
+    <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {list.map(e => (
+        <a href={`/imprimibles/${e.slug}/`} class="block rounded-2xl overflow-hidden border hover:shadow transition">
+          <img src={e.data.cover ?? "/og.png"} alt={e.data.title} loading="lazy" decoding="async" class="w-full aspect-[4/3] object-cover" />
+          <div class="p-3">
+            <h3 class="font-semibold line-clamp-2">{e.data.title}</h3>
+            <p class="text-sm text-slate-500 line-clamp-2">{e.data.description}</p>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

@@ -124,13 +124,11 @@ const related = all
     </ul>
 
     <ul class="mt-2 text-sm">
-      {subject && (
-        <li>
-          <a class="underline hover:no-underline" href={`/imprimibles/asignatura/${subject}/`}>
-            Ver más de {subject}
+          {subject && (
+          <a href={`/imprimibles/asignatura/${subject}/`} class="inline-block mt-3 px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 transition">
+              Ver más de {subject}
           </a>
-        </li>
-      )}
+          )}
     </ul>
 
 
