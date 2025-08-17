@@ -13,7 +13,7 @@ const {
 /** Entorno y URLs */
 const isProd = import.meta.env.MODE === "production";
 const site = Astro.site ?? "https://imprimibles.vercel.app";
-function normalizeCanonical(u) {
+function normalizeCanonical(u: string): string {
   const url = new URL(u);
   if (url.pathname !== "/") {
     url.pathname = url.pathname.replace(/\/+$/, ""); // quita barras finales
