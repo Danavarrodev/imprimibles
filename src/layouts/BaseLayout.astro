@@ -24,9 +24,11 @@ const absOg = ogImage.startsWith("http")
 const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
+  "@id": `${site}#organization`,
   name: "Imprimibles Educativos",
   url: site,
-  logo: absOg,
+  logo: new URL("/icon.svg", site).href,
+  image: new URL("/og.png", site).href
 };
 ---
 
@@ -78,7 +80,8 @@ const orgJsonLd = {
     <slot name="head" />
 
     <!-- Evita indexación en no-prod -->
-    {!isProd && <meta name="robots" content="index,follow" />}
+    {!isProd && <meta name="robots" content="noindex,nofollow" />}
+
 
     {
       isProd && (
