@@ -13,7 +13,17 @@ const {
 /** Entorno y URLs */
 const isProd = import.meta.env.MODE === "production";
 const site = Astro.site ?? "https://imprimibles.vercel.app";
-const canonical = Astro.url?.href ?? new URL("/", site).href;
+function normalizeCanonical(u) {
+  const url = new URL(u);
+  if (url.pathname !== "/") {
+    url.pathname = url.pathname.replace(/\/+$/, ""); // quita barras finales
+  }
+  return url.href;
+}
+
+const rawCanonical = Astro.url?.href ?? new URL("/", site).href;
+const canonical = normalizeCanonical(rawCanonical);
+
 
 /** Asegura ogImage absoluto */
 const absOg = ogImage.startsWith("http")
