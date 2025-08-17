@@ -1,6 +1,7 @@
-import sitemap from "@astrojs/sitemap";
+import { defineConfig } from 'astro/config';
+import sitemap from '@astrojs/sitemap';
 
-export default {
-  site: "https://imprimibles.vercel.app", 
+export default defineConfig({
+  site: 'https://imprimibles.vercel.app',
   integrations: [sitemap()],
-};
+});
