@@ -1,16 +1,29 @@
-import { z, defineCollection } from "astro:content";
+// src/content.config.ts
+import { defineCollection, z } from "astro:content";
+
+const SUBJECTS = [
+  "matemáticas",
+  "lengua",
+  "inglés",
+  "ciencias naturales",
+  "ciencias sociales",
+  "arte",
+  "música",
+] as const;
+
+const LEVELS = ["infantil", "primaria", "secundaria"] as const;
 
 const imprimibles = defineCollection({
   type: "content",
   schema: z.object({
     title: z.string(),
-    description: z.string().min(10),
+    description: z.string().min(40).max(180),
+    subject: z.enum(SUBJECTS),
+    level: z.enum(LEVELS),
     tags: z.array(z.string()).default([]),
-    pdf: z.string().startsWith("/"),
-    subject: z.string().default("general"),
-    level: z.string().default("primaria"),
-    cover: z.string().optional(),
-    date: z.date().default(new Date()),
+    cover: z.string(),
+    pdf: z.string(),
+    date: z.coerce.date(), 
   }),
 });
 
