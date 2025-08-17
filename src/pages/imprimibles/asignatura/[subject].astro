@@ -8,10 +8,9 @@ export async function getStaticPaths() {
         new Set(entries.map((e) => e.data?.subject).filter(Boolean)),
     );
 
-    // Generamos rutas seguras pero conservamos el valor original en props
     return subjects.map((s) => ({
-        params: { subject: encodeURIComponent(s) },
-        props: { subjectValue: s },
+        params: { subject: s },
+        props: { subjectValue: s }, 
     }));
 }
 
@@ -20,7 +19,7 @@ const subject = subjectValue;
 
 const site = Astro.site ?? "https://imprimibles.vercel.app";
 const pageUrl = new URL(
-    `/imprimibles/asignatura/${encodeURIComponent(subject)}/`,
+    `/imprimibles/asignatura/${encodeURIComponent(subject)}/`, 
     site,
 ).href;
 
@@ -84,50 +83,65 @@ const itemListLd = {
         <h1 class="text-2xl font-bold">{title}</h1>
         <p class="text-slate-600 mt-1">{description}</p>
 
+        {/* Intro dinámico para SEO */}
+        <div class="mt-4 text-slate-700 text-base leading-relaxed">
+            <p>
+                Aquí encontrarás <strong>imprimibles de {subject}</strong> listos
+                para descargar y utilizar en el aula o en casa. Son recursos educativos
+                diseñados para facilitar el aprendizaje y hacer las actividades más
+                entretenidas.
+            </p>
+        </div>
+
         {
             list.length === 0 ? (
                 <p class="mt-6 text-slate-600">
                     Aún no hay imprimibles en esta asignatura.
                 </p>
             ) : (
-                <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {list.map((e) => {
-                        const href = `/imprimibles/${e.slug}/`;
-                        const cover = e.data?.cover ?? "/og.png";
-                        return (
-                            <a
-                                href={href}
-                                data-astro-prefetch
-                                class="block rounded-2xl overflow-hidden border hover:shadow transition"
-                                aria-label={`Ver ficha de ${e.data?.title}`}
-                            >
-                                <img
-                                    src={cover}
-                                    alt={e.data?.title}
-                                    loading="lazy"
-                                    decoding="async"
-                                    class="w-full aspect-[4/3] object-cover"
-                                />
-                                <div class="p-3">
-                                    <h3 class="font-semibold line-clamp-2">
-                                        {e.data?.title}
-                                    </h3>
-                                    <p class="text-sm text-slate-500 line-clamp-2">
-                                        {e.data?.description}
-                                    </p>
-                                    <div class="mt-2 text-xs text-slate-500">
-                                        {e.data?.subject && (
-                                            <span>{e.data.subject}</span>
-                                        )}
-                                        {e.data?.level && (
-                                            <span> · {e.data.level}</span>
-                                        )}
+                <>
+                    <h2 class="text-xl font-semibold mt-8 mb-4">
+                        Recursos disponibles
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {list.map((e) => {
+                            const href = `/imprimibles/${e.slug}/`;
+                            const cover = e.data?.cover ?? "/og.png";
+                            return (
+                                <a
+                                    href={href}
+                                    data-astro-prefetch
+                                    class="block rounded-2xl overflow-hidden border hover:shadow transition"
+                                    aria-label={`Ver ficha de ${e.data?.title}`}
+                                >
+                                    <img
+                                        src={cover}
+                                        alt={e.data?.title}
+                                        loading="lazy"
+                                        decoding="async"
+                                        class="w-full aspect-[4/3] object-cover"
+                                    />
+                                    <div class="p-3">
+                                        <h3 class="font-semibold line-clamp-2">
+                                            {e.data?.title}
+                                        </h3>
+                                        <p class="text-sm text-slate-500 line-clamp-2">
+                                            {e.data?.description}
+                                        </p>
+                                        <div class="mt-2 text-xs text-slate-500">
+                                            {e.data?.subject && (
+                                                <span>{e.data.subject}</span>
+                                            )}
+                                            {e.data?.level && (
+                                                <span> · {e.data.level}</span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </a>
-                        );
-                    })}
-                </div>
+                                </a>
+                            );
+                        })}
+                    </div>
+                </>
             )
         }
     </section>

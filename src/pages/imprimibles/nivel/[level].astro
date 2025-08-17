@@ -9,7 +9,7 @@ export async function getStaticPaths() {
     );
 
     return levels.map((l) => ({
-        params: { level: encodeURIComponent(l) },
+        params: { level: l }, // ← sin encodeURIComponent aquí
         props: { levelValue: l },
     }));
 }
@@ -19,9 +19,11 @@ const level = levelValue;
 
 const site = Astro.site ?? "https://imprimibles.vercel.app";
 const pageUrl = new URL(
-    `/imprimibles/nivel/${encodeURIComponent(level)}/`,
+    `/imprimibles/nivel/${encodeURIComponent(level)}/`, // ← sí codificas en URL
     site,
 ).href;
+
+// ... resto del archivo igual ...
 
 const all = await getCollection("imprimibles");
 const list = all
