@@ -3,40 +3,132 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
 
 export async function getStaticPaths() {
-  const entries = await getCollection("imprimibles");
-  const subjects = Array.from(new Set(entries.map(e => e.data?.subject).filter(Boolean)));
-  return subjects.map(s => ({ params: { subject: s }, props: { subject: s } }));
+    const entries = await getCollection("imprimibles");
+    const subjects = Array.from(
+        new Set(entries.map((e) => e.data?.subject).filter(Boolean)),
+    );
+
+    // Generamos rutas seguras pero conservamos el valor original en props
+    return subjects.map((s) => ({
+        params: { subject: encodeURIComponent(s) },
+        props: { subjectValue: s },
+    }));
 }
 
-const { subject } = Astro.props;
+const { subjectValue } = Astro.props;
+const subject = subjectValue;
+
+const site = Astro.site ?? "https://imprimibles.vercel.app";
+const pageUrl = new URL(
+    `/imprimibles/asignatura/${encodeURIComponent(subject)}/`,
+    site,
+).href;
+
 const all = await getCollection("imprimibles");
 const list = all
-  .filter(e => e.data?.subject === subject)
-  .sort((a,b) => new Date(b.data?.date ?? 0) - new Date(a.data?.date ?? 0));
+    .filter((e) => e.data?.subject === subject)
+    .sort((a, b) => {
+        const da = new Date(a.data?.date ?? 0).getTime();
+        const db = new Date(b.data?.date ?? 0).getTime();
+        return db - da;
+    });
+
+const title = `Imprimibles de ${subject}`;
+const description = `Imprimibles de ${subject}. Descarga y utiliza en clase o en casa.`;
+
+// JSON-LD CollectionPage + ItemList
+const collectionLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: title,
+    description,
+    url: pageUrl,
+    isPartOf: { "@type": "WebSite", name: "Imprimibles Educativos", url: site },
+};
+
+const itemListLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: list.map((e, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: new URL(`/imprimibles/${e.slug}/`, site).href,
+        name: e.data?.title,
+    })),
+};
 ---
 
 <BaseLayout
-  title={`${subject} | Imprimibles Educativos`}
-  description={`Imprimibles de ${subject}. Descarga y utiliza en clase o en casa.`}
-  ogType="website"
+    title={`${title} | Imprimibles Educativos`}
+    description={description}
+    ogType="website"
 >
-  <section class="max-w-6xl mx-auto py-8">
-    <h1 class="text-2xl font-bold">Imprimibles de {subject}</h1>
+    <Fragment slot="head">
+        <link rel="canonical" href={pageUrl} />
+        <meta property="og:url" content={pageUrl} />
+        <script
+            type="application/ld+json"
+            set:html={JSON.stringify(collectionLd)}
+        />
+        {
+            list.length > 0 && (
+                <script
+                    type="application/ld+json"
+                    set:html={JSON.stringify(itemListLd)}
+                />
+            )
+        }
+    </Fragment>
 
-    {list.length === 0 && (
-      <p class="mt-4 text-slate-600">Aún no hay imprimibles en esta asignatura.</p>
-    )}
+    <section class="max-w-6xl mx-auto py-8">
+        <h1 class="text-2xl font-bold">{title}</h1>
+        <p class="text-slate-600 mt-1">{description}</p>
 
-    <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {list.map(e => (
-        <a href={`/imprimibles/${e.slug}/`} class="block rounded-2xl overflow-hidden border hover:shadow transition">
-          <img src={e.data.cover ?? "/og.png"} alt={e.data.title} loading="lazy" decoding="async" class="w-full aspect-[4/3] object-cover" />
-          <div class="p-3">
-            <h3 class="font-semibold line-clamp-2">{e.data.title}</h3>
-            <p class="text-sm text-slate-500 line-clamp-2">{e.data.description}</p>
-          </div>
-        </a>
-      ))}
-    </div>
-  </section>
+        {
+            list.length === 0 ? (
+                <p class="mt-6 text-slate-600">
+                    Aún no hay imprimibles en esta asignatura.
+                </p>
+            ) : (
+                <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {list.map((e) => {
+                        const href = `/imprimibles/${e.slug}/`;
+                        const cover = e.data?.cover ?? "/og.png";
+                        return (
+                            <a
+                                href={href}
+                                data-astro-prefetch
+                                class="block rounded-2xl overflow-hidden border hover:shadow transition"
+                                aria-label={`Ver ficha de ${e.data?.title}`}
+                            >
+                                <img
+                                    src={cover}
+                                    alt={e.data?.title}
+                                    loading="lazy"
+                                    decoding="async"
+                                    class="w-full aspect-[4/3] object-cover"
+                                />
+                                <div class="p-3">
+                                    <h3 class="font-semibold line-clamp-2">
+                                        {e.data?.title}
+                                    </h3>
+                                    <p class="text-sm text-slate-500 line-clamp-2">
+                                        {e.data?.description}
+                                    </p>
+                                    <div class="mt-2 text-xs text-slate-500">
+                                        {e.data?.subject && (
+                                            <span>{e.data.subject}</span>
+                                        )}
+                                        {e.data?.level && (
+                                            <span> · {e.data.level}</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </a>
+                        );
+                    })}
+                </div>
+            )
+        }
+    </section>
 </BaseLayout>
