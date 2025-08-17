@@ -6,7 +6,7 @@ pdf: "/pdfs/abecedario-ilustrado.pdf"
 subject: "lengua"
 level: "infantil"
 date: 2025-08-11
-cover: "./placeholder.jpg"
+cover: "./abecedario-ilustrado.webp"
 ---
 
 Ideal para trabajar el reconocimiento de letras y asociarlas a imágenes.
