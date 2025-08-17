@@ -21,7 +21,6 @@ const LEVELS = [
 
 const imprimibles = defineCollection({
   type: "content",
-  // ⬇️ aquí recibes `image` sin importarlo
   schema: ({ image }) =>
     z.object({
       title: z.string(),
@@ -29,11 +28,12 @@ const imprimibles = defineCollection({
       subject: z.enum(SUBJECTS),
       level: z.enum(LEVELS),
       tags: z.array(z.string()).default([]),
-      // ✅ obliga a portada tipo astro:assets (ej: "./portada.webp")
       cover: image().optional(),
       pdf: z.string(),
       date: z.coerce.date(),
+      
     }),
+    
 });
 
 export const collections = { imprimibles };
