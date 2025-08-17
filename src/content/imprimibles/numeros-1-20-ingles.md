@@ -4,8 +4,8 @@ description: "Actividad para aprender y repasar los números del 1 al 20 en ingl
 subject: "inglés"
 level: "primaria"
 tags: ["números", "vocabulario", "listening"]
-cover: "./placeholder.jpg"
-pdf: "/pdfs/numeros-1-20.pdf"
+cover: "./numeros-1-20-ingles.webp"
+pdf: "/pdfs/numeros-1-20-ingles.pdf"
 date: "2025-08-17"
 ---
 
