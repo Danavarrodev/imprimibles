@@ -9,8 +9,8 @@ export async function getStaticPaths() {
     );
 
     return subjects.map((s) => ({
-        params: { subject: s },
-        props: { subjectValue: s }, 
+        params: { subject: s }, // sin encodeURIComponent aquí
+        props: { subjectValue: s },
     }));
 }
 
@@ -18,8 +18,9 @@ const { subjectValue } = Astro.props;
 const subject = subjectValue;
 
 const site = Astro.site ?? "https://imprimibles.vercel.app";
+// URL canónica SIN slash final (consistencia global)
 const pageUrl = new URL(
-    `/imprimibles/asignatura/${encodeURIComponent(subject)}/`, 
+    `/imprimibles/asignatura/${encodeURIComponent(subject)}`,
     site,
 ).href;
 
@@ -51,7 +52,7 @@ const itemListLd = {
     itemListElement: list.map((e, i) => ({
         "@type": "ListItem",
         position: i + 1,
-        url: new URL(`/imprimibles/${e.slug}/`, site).href,
+        url: new URL(`/imprimibles/${e.slug}`, site).href, // sin slash final
         name: e.data?.title,
     })),
 };
@@ -77,9 +78,21 @@ const itemListLd = {
                 />
             )
         }
+        {list.length === 0 && <meta name="robots" content="noindex, follow" />}
     </Fragment>
 
-    <section class="max-w-6xl mx-auto py-8">
+    {/* Breadcrumbs visibles (UX + SEO) */}
+    <nav aria-label="Breadcrumb" class="max-w-6xl mx-auto px-4 pt-6">
+        <ol class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+            <li>
+                <a href="/imprimibles" class="hover:underline">Imprimibles</a>
+            </li>
+            <li aria-hidden>›</li>
+            <li class="text-slate-900 font-medium">{subject}</li>
+        </ol>
+    </nav>
+
+    <section class="max-w-6xl mx-auto py-8 px-4">
         <h1 class="text-2xl font-bold">{title}</h1>
         <p class="text-slate-600 mt-1">{description}</p>
 
@@ -105,7 +118,7 @@ const itemListLd = {
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {list.map((e) => {
-                            const href = `/imprimibles/${e.slug}/`;
+                            const href = `/imprimibles/${e.slug}`; // sin slash final
                             const cover = e.data?.cover ?? "/og.png";
                             return (
                                 <a
