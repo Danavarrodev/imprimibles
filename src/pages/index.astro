@@ -3,62 +3,179 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import CardImprimible from "../components/CardImprimible.astro";
 import { getCollection } from "astro:content";
 
-// Trae todo, ordena por fecha, y toma los 6 últimos
+// Contenido
 const items = await getCollection("imprimibles");
-const sorted = items.sort((a,b) => +b.data.date - +a.data.date);
+const EAGER_COUNT = 6; // 3 columnas x 2 filas. Pon 3 si quieres solo la 1ª fila.
+
+// Orden por fecha (tolerante si falta date)
+const sorted = items
+  .map((it) => ({ ...it, __ts: new Date(it.data?.date || 0).getTime() }))
+  .sort((a, b) => b.__ts - a.__ts);
+
 const latest = sorted.slice(0, 6);
 
-// Saca categorías (subjects) únicas
-const subjects = Array.from(new Set(items.map(i => i.data.subject)));
+// Subjects únicos para chips
+const subjects = Array.from(
+  new Set(items.map((i) => i.data.subject).filter(Boolean)),
+).sort((a, b) => a.localeCompare(b, "es"));
+
+// --- ICONOS (SVG inline, sin dependencias) ---
+const SVG = {
+  book: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22.5Z"/></svg>`,
+  calc: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8M8 10h2m4 0h2M8 14h2m4 0h2M8 18h8"/></svg>`,
+  leaf: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 3C7 7 5 10 5 14a7 7 0 0 0 14 0c0-6-4-9-8-11Z"/><path d="M7 14c4 0 6-2 10-6"/></svg>`,
+  globe: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a18 18 0 0 1 0 20M12 2a18 18 0 0 0 0 20"/></svg>`,
+  palette: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22a10 10 0 1 1 9.54-13.06 3 3 0 0 1-2.87 4.06h-1.67a2 2 0 0 0-2 2 3 3 0 0 1-3 3Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="10.5" r="1"/></svg>`,
+  lang: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8h14M7 8s2 7 5 7 5-7 5-7M12 15v4M10 19h4"/></svg>`,
+  doc: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M10 13h4M8 17h8"/></svg>`,
+};
+
+// Mapa de asignatura -> icono
+function subjectIconKey(label) {
+  const k = String(label).toLowerCase();
+  if (k === "matemáticas" || k === "matematicas") return "calc";
+  if (k === "lengua") return "book";
+  if (k === "ciencias naturales") return "leaf";
+  if (k === "ciencias sociales") return "globe";
+  if (k === "inglés" || k === "ingles") return "lang";
+  if (k === "arte") return "palette";
+  return "doc"; // fallback
+}
 ---
-<BaseLayout title="Imprimibles educativos | Inicio" description="Descarga gratis fichas y actividades por asignatura y nivel.">
+
+<BaseLayout
+  title="Imprimibles educativos listos para imprimir | Inicio"
+  description="Descarga gratis fichas, pósters y juegos imprimibles por asignatura y nivel. Material listo para imprimir en PDF, actualizado con nuevos recursos."
+>
   <!-- HERO -->
-  <section class="grid gap-8 md:grid-cols-2 items-center py-8">
-    <div class="space-y-4">
-      <h1 class="text-4xl font-extrabold leading-tight">Imprimibles educativos listos para usar</h1>
-      <p class="text-slate-600">Recursos por asignatura y nivel, con descarga directa en PDF. Añadimos material nuevo cada semana.</p>
-      <div class="flex gap-3">
-        <a href="/imprimibles/" class="px-5 py-3 rounded-2xl bg-black text-white">Ver todos los imprimibles</a>
-        <a href="/contacto" class="px-5 py-3 rounded-2xl border">Pedir un recurso</a>
+  <section
+    class="mx-auto max-w-7xl px-4 pt-10 pb-8 grid gap-8 md:grid-cols-2 items-center"
+  >
+    <div class="space-y-5">
+      <h1
+        class="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight text-slate-900"
+      >
+        Imprimibles educativos <span class="text-indigo-600"
+          >listos para usar</span
+        >
+      </h1>
+      <p class="text-slate-600 text-lg">
+        Recursos por asignatura y nivel con descarga directa en PDF. Pósters,
+        flashcards y juegos pensados para <strong>infantil y primaria</strong>.
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <a
+          href="/imprimibles/"
+          class="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-5 py-3 text-sm font-medium hover:bg-slate-700 transition"
+        >
+          Ver todos los imprimibles
+          <span aria-hidden="true">→</span>
+        </a>
+        <a
+          href="/contacto"
+          class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-800 hover:bg-slate-50 transition"
+        >
+          Pedir un recurso
+        </a>
       </div>
-      <div class="text-sm text-slate-500">Gratis · Formato A4 · Listos para imprimir</div>
+      <p class="text-sm text-slate-500">
+        Gratis · Formato A4 · Listos para imprimir
+      </p>
     </div>
-    <div class="rounded-2xl border p-6">
-      <p class="text-slate-600">Aquí puedes poner una imagen/cover o una mini vista de algunos recursos.</p>
+
+    <!-- Bloque visual placeholder -->
+    <div class="rounded-2xl border border-slate-200 bg-white/70 p-6">
+      <p class="text-slate-600">
+        Sugerencia: coloca aquí un collage con 3-4 portadas o una “malla” de
+        ejemplos.
+      </p>
     </div>
   </section>
 
-  <!-- ACCESOS RÁPIDOS A ASIGNATURAS -->
-  {subjects.length > 0 && (
-    <section class="mb-8">
-      <h2 class="text-xl font-semibold mb-3">Explorar por asignatura</h2>
-      <div class="flex flex-wrap gap-2">
-        {subjects.map(s => (
-          <a href={`/imprimibles/?subject=${encodeURIComponent(s)}`} class="px-3 py-2 rounded-xl border text-sm hover:bg-slate-50">{s}</a>
-        ))}
+  <!-- ACCESOS RÁPIDOS A ASIGNATURAS (con iconos) -->
+  {
+    subjects.length > 0 && (
+      <section class="mx-auto max-w-7xl px-4 pb-2">
+        <h2 class="text-xl font-semibold text-slate-900 mb-3">
+          Explorar por asignatura
+        </h2>
+        <nav class="flex flex-wrap gap-2">
+          {subjects.map((s) => {
+            const iconName = subjectIconKey(s);
+            const svg = SVG[iconName] ?? SVG.doc;
+            return (
+              <a
+                href={`/imprimibles/?subject=${encodeURIComponent(s)}`}
+                class="inline-flex items-center gap-2 rounded-full bg-slate-100 text-slate-800 px-4 py-2 text-sm font-medium hover:bg-indigo-100 hover:text-indigo-700 transition"
+              >
+                <span class="inline-flex text-slate-700" set:html={svg} />
+                {s}
+              </a>
+            );
+          })}
+        </nav>
+      </section>
+    )
+  }
+
+  <!-- ÚLTIMOS AÑADIDOS -->
+  <section class="py-12 bg-gradient-to-b from-white to-slate-50">
+    <div class="mx-auto max-w-7xl px-4">
+      <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8"
+      >
+        <div>
+          <h2
+            class="text-2xl md:text-3xl font-bold tracking-tight text-slate-900"
+          >
+            Últimos añadidos
+          </h2>
+          <p class="mt-1 text-slate-600 text-sm md:text-base">
+            Descubre los recursos más recientes listos para imprimir.
+          </p>
+        </div>
+        <a
+          href="/imprimibles/"
+          class="mt-4 sm:mt-0 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+        >
+          Ver todos
+          <span aria-hidden="true">→</span>
+        </a>
       </div>
-    </section>
-  )}
 
-  <!-- ÚLTIMOS IMPRESOS -->
-  <section class="mb-6">
-    <div class="flex items-baseline justify-between mb-4">
-      <h2 class="text-xl font-semibold">Últimos añadidos</h2>
-      <a href="/imprimibles/" class="text-sm text-slate-600 hover:underline">Ver todos</a>
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          latest.map(({ data, slug }, i) => (
+            <CardImprimible
+              title={data.title}
+              description={data.description}
+              cover={data.cover}
+              subject={data.subject}
+              level={data.level}
+              slug={slug}
+              pdf={data.pdf}
+              eager={i < EAGER_COUNT}
+            />
+          ))
+        }
+      </div>
+
+      {
+        latest.length === 0 && (
+          <p class="mt-10 rounded-xl border border-dashed p-12 text-center text-slate-600">
+            Aún no hay imprimibles publicados. ¡Vuelve pronto! 😊
+          </p>
+        )
+      }
     </div>
-   <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-  {latest.map(({ data, slug }) => (
-    <CardImprimible
-      title={data.title}
-      description={data.description}
-      cover={data.cover}
-      subject={data.subject}
-      level={data.level}
-      slug={slug}
-      pdf={data.pdf}
-    />
-  ))}
-</div>
-
   </section>
+
+  <style is:global>
+    /* Tamaño/estilo de los SVG de chips */
+    .icon {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+  </style>
 </BaseLayout>

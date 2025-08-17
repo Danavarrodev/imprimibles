@@ -3,6 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
 import { Image } from "astro:assets";
 
+/** Paths estáticos */
 export async function getStaticPaths() {
   const entries = await getCollection("imprimibles");
   return entries.map((entry) => ({
@@ -11,31 +12,41 @@ export async function getStaticPaths() {
   }));
 }
 
+/** Props de la página */
 const { entry } = Astro.props;
-const { title, description, cover, pdf, subject, level, date, tags } = entry.data;
+const { title, description, cover, pdf, subject, level, date, tags } =
+  entry.data;
 
+/** Utilidades */
 const site = Astro.site ?? "https://imprimibles.vercel.app";
-// SIN slash final
 const pageUrl = new URL(`/imprimibles/${entry.slug}`, site).href;
 
-const absCover = cover ? new URL(cover.src, site).href : undefined;
-const ogImage = absCover ?? new URL("/og.png", site).href;
+const isMeta = cover && typeof cover === "object" && "src" in cover;
+const coverSrcAbs = cover
+  ? isMeta
+    ? new URL(cover.src, site).href
+    : new URL(String(cover), site).href
+  : undefined;
 
-// PDF absoluto (SEO/JSON-LD)
+const ogImage = coverSrcAbs ?? new URL("/og.png", site).href;
+
+/** PDF absoluto (SEO/JSON-LD) */
 const pdfUrl = pdf
   ? /^https?:\/\//i.test(pdf)
     ? pdf
     : new URL(pdf.startsWith("/") ? pdf : `/${pdf}`, site).href
   : undefined;
 
-
+/** HREF para botón (dev-friendly) */
 const pdfHref = pdf
   ? /^https?:\/\//i.test(pdf)
     ? pdf
-    : (pdf.startsWith("/") ? pdf : `/${pdf}`)
+    : pdf.startsWith("/")
+      ? pdf
+      : `/${pdf}`
   : undefined;
 
-// Colección completa y relacionados (mismo subject o level)
+/** Relacionados (mismo subject o level) */
 const all = await getCollection("imprimibles");
 const related = all
   .filter((e) => e.slug !== entry.slug)
@@ -52,7 +63,7 @@ const related = all
   })
   .slice(0, 3);
 
-// JSON-LD
+/** JSON-LD */
 const organization = {
   "@type": "Organization",
   name: "Imprimibles Educativos",
@@ -70,8 +81,8 @@ const learningLd = {
   keywords: Array.isArray(tags) && tags.length ? tags.join(", ") : undefined,
   isAccessibleForFree: true,
   url: pageUrl,
-  image: absCover,
-  thumbnailUrl: absCover,
+  image: coverSrcAbs,
+  thumbnailUrl: coverSrcAbs,
   datePublished: date ? new Date(date).toISOString() : undefined,
   author: organization,
   publisher: organization,
@@ -80,7 +91,13 @@ const learningLd = {
     ? { "@type": "DownloadAction", target: pdfUrl }
     : undefined,
   encoding: pdfUrl
-    ? [{ "@type": "MediaObject", fileFormat: "application/pdf", contentUrl: pdfUrl }]
+    ? [
+        {
+          "@type": "MediaObject",
+          fileFormat: "application/pdf",
+          contentUrl: pdfUrl,
+        },
+      ]
     : undefined,
 };
 
@@ -89,7 +106,7 @@ const webPageLd = {
   "@type": "WebPage",
   name: title,
   url: pageUrl,
-  primaryImageOfPage: absCover,
+  primaryImageOfPage: coverSrcAbs,
   description,
   isPartOf: { "@type": "WebSite", name: "Imprimibles Educativos", url: site },
 };
@@ -102,14 +119,9 @@ const breadcrumbsLd = {
       "@type": "ListItem",
       position: 1,
       name: "Imprimibles",
-      item: new URL("/imprimibles", site).href, // sin slash final
+      item: new URL("/imprimibles", site).href,
     },
-    {
-      "@type": "ListItem",
-      position: 2,
-      name: title,
-      item: pageUrl,
-    },
+    { "@type": "ListItem", position: 2, name: title, item: pageUrl },
   ],
 };
 
@@ -121,11 +133,28 @@ const relatedLd =
         itemListElement: related.map((r, i) => ({
           "@type": "ListItem",
           position: i + 1,
-          url: new URL(`/imprimibles/${r.slug}`, site).href, // sin slash final
+          url: new URL(`/imprimibles/${r.slug}`, site).href,
           name: r.data?.title,
         })),
       }
     : undefined;
+
+/** Iconos SVG inline (sin dependencias) */
+const ICONS = {
+  book: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22.5Z"/></svg>`,
+  calc: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8M8 10h2m4 0h2M8 14h2m4 0h2M8 18h8"/></svg>`,
+  tag: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 8l-7-7-11 11v7h7L21 8z"/><path d="M7.5 7.5h.01"/></svg>`,
+  level: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 14h16M4 10h16M7 6h10v12H7z"/></svg>`,
+  pdf: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M10 13h4M8 17h8"/></svg>`,
+};
+
+/** Helper para icono de subject */
+function subjectIcon(label?: string) {
+  const k = (label ?? "").toLowerCase();
+  if (k === "matemáticas" || k === "matematicas") return ICONS.calc;
+  if (k === "lengua") return ICONS.book;
+  return ICONS.tag;
+}
 ---
 
 <BaseLayout
@@ -141,161 +170,246 @@ const relatedLd =
 
     <script type="application/ld+json" set:html={JSON.stringify(learningLd)} />
     <script type="application/ld+json" set:html={JSON.stringify(webPageLd)} />
-    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbsLd)} />
-    {relatedLd && (
-      <script type="application/ld+json" set:html={JSON.stringify(relatedLd)} />
-    )}
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(breadcrumbsLd)}
+    />
+    {
+      relatedLd && (
+        <script
+          type="application/ld+json"
+          set:html={JSON.stringify(relatedLd)}
+        />
+      )
+    }
   </Fragment>
 
-  <article class="prose max-w-2xl mx-auto py-8">
-    <h1>{title}</h1>
+  <article class="mx-auto max-w-4xl px-4 py-8">
+    <!-- Cabecera -->
+    <header class="mb-6">
+      <h1
+        class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900"
+      >
+        {title}
+      </h1>
+      {
+        description && (
+          <p class="mt-2 text-slate-600 max-w-prose">{description}</p>
+        )
+      }
+      {
+        date && (
+          <p class="mt-2 text-xs text-slate-500">
+            Publicado el{" "}
+            <time datetime={new Date(date).toISOString()}>
+              {new Date(date).toLocaleDateString("es-ES", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              })}
+            </time>
+          </p>
+        )
+      }
+    </header>
 
-    {cover ? (
-      <figure class="rounded-xl bg-gray-50 p-3">
-        <div class="flex items-center justify-center min-h-[260px] md:min-h-[360px]">
-          <Image
-            src={cover}
-            alt={`Portada de "${title}"`}
-            width={1200}
-            height={900}
-            fit="contain"
-            loading="eager"
-            class="w-auto max-h-[360px] md:max-h-[440px]"
-          />
-        </div>
-        {description && <figcaption class="sr-only">{description}</figcaption>}
-      </figure>
-    ) : (
-      <div class="flex items-center justify-center bg-gray-50 rounded-xl min-h-[260px] md:min-h-[360px]">
-        <img
-          src="/images/placeholder.svg"
-          alt={title}
-          loading="lazy"
-          class="max-h-[360px] md:max-h-[440px] object-contain"
-          width="1200"
-          height="900"
-        />
+    <!-- Portada -->
+    <section class="rounded-2xl border border-slate-200 bg-white/80 p-4 md:p-6">
+      <div
+        class="flex items-center justify-center min-h-[280px] md:min-h-[360px]"
+      >
+        {
+          cover ? (
+            isMeta ? (
+              <Image
+                src={cover}
+                alt={`Portada de "${title}"`}
+                width={1200}
+                height={900}
+                fit="contain"
+                loading="eager"
+                fetchpriority="high"
+                class="w-auto max-h-[420px]"
+              />
+            ) : (
+              <img
+                src={String(cover)}
+                alt={`Portada de "${title}"`}
+                loading="eager"
+                decoding="async"
+                class="w-auto max-h-[420px] object-contain"
+                width="1200"
+                height="900"
+              />
+            )
+          ) : (
+            <img
+              src="/images/placeholder.svg"
+              alt={title}
+              loading="lazy"
+              class="w-auto max-h-[420px] object-contain"
+              width="1200"
+              height="900"
+            />
+          )
+        }
       </div>
-    )}
+    </section>
 
-    <p class="text-slate-600">{description}</p>
+    <!-- Detalles + CTA -->
+    <section class="mt-6 rounded-2xl bg-slate-50 border p-4 md:p-6">
+      <h2
+        class="text-sm font-semibold text-slate-500 mb-3 uppercase tracking-wide"
+      >
+        Detalles
+      </h2>
 
-    {date && (
-      <p class="mt-2 text-xs text-slate-500">
-        Publicado el{" "}
-        <time dateTime={new Date(date).toISOString()}>
-          {new Date(date).toLocaleDateString("es-ES", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-          })}
-        </time>
-      </p>
-    )}
-
-    <section class="mt-6 rounded-xl bg-slate-50 border p-4 shadow-sm">
-      <h2 class="text-sm font-semibold text-slate-500 mb-3 uppercase">Detalles</h2>
-      <div class="flex flex-wrap gap-4 text-sm">
-        {subject && (
-          <span class="inline-flex items-center gap-1 rounded-full bg-white border px-3 py-1">
-            📘 {subject}
-          </span>
-        )}
-        {level && (
-          <span class="inline-flex items-center gap-1 rounded-full bg-white border px-3 py-1">
-            🎯 {level}
-          </span>
-        )}
-        {Array.isArray(tags) &&
-          tags.map((t) => (
-            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-slate-600 bg-white">
-              #{t}
+      <div class="flex flex-wrap gap-2 text-sm">
+        {
+          subject && (
+            <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-slate-700">
+              <span
+                class="inline-flex text-slate-600"
+                set:html={subjectIcon(subject)}
+              />
+              {subject}
             </span>
-          ))}
+          )
+        }
+        {
+          level && (
+            <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-slate-700">
+              <span class="inline-flex text-slate-600" set:html={ICONS.level} />
+              {level}
+            </span>
+          )
+        }
+        {
+          Array.isArray(tags) &&
+            tags.map((t) => (
+              <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-600">
+                #{t}
+              </span>
+            ))
+        }
       </div>
 
       <div class="mt-4 flex flex-col gap-2 sm:flex-row">
-        {level && (
-          <a
-            href={`/imprimibles/nivel/${encodeURIComponent(level)}`}  
-            class="px-4 py-2 rounded-lg border bg-white hover:bg-slate-100 transition text-sm text-slate-700"
-          >
-            Ver más de {level}
-          </a>
-        )}
-        {subject && (
-          <a
-            href={`/imprimibles/asignatura/${encodeURIComponent(subject)}`} 
-            class="px-4 py-2 rounded-lg border bg-white hover:bg-slate-100 transition text-sm text-slate-700"
-          >
-            Ver más de {subject}
-          </a>
-        )}
+        {
+          level && (
+            <a
+              href={`/imprimibles/nivel/${encodeURIComponent(level)}`}
+              class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 transition"
+            >
+              Ver más de {level}
+            </a>
+          )
+        }
+        {
+          subject && (
+            <a
+              href={`/imprimibles/asignatura/${encodeURIComponent(subject)}`}
+              class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 transition"
+            >
+              Ver más de {subject}
+            </a>
+          )
+        }
       </div>
 
-      {pdfHref && (
-        <div class="mt-4">
-          <a
-            href={pdfHref}  
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
-            aria-label={`Descargar ${title} en PDF`}
-          >
-            🧾 Descargar PDF
-          </a>
-        </div>
-      )}
+      {
+        pdfHref && (
+          <div class="mt-5">
+            <a
+              href={pdfHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 rounded-full bg-indigo-600 text-white px-6 py-3 text-sm font-medium hover:bg-indigo-700 transition"
+              aria-label={`Descargar ${title} en PDF`}
+            >
+              <span class="inline-flex" set:html={ICONS.pdf} />
+              Descargar PDF
+            </a>
+          </div>
+        )
+      }
     </section>
 
-    {related.length > 0 && (
-      <section class="mt-12">
-        <h2 class="text-xl font-semibold mb-4">Imprimibles relacionados</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {related.map((r) => {
-            const rHref = `/imprimibles/${r.slug}`; // sin slash final
-            const rTitle = r.data?.title ?? "Imprimible";
-            return (
-              <a
-                href={rHref}
-                data-astro-prefetch
-                class="block rounded-2xl overflow-hidden border hover:shadow transition"
-              >
-                <div class="flex items-center justify-center bg-gray-50 min-h-[176px]">
-                  {r.data?.cover ? (
-                    <Image
-                      src={r.data.cover}
-                      alt={rTitle}
-                      width={600}
-                      height={400}
-                      fit="contain"
-                      loading="lazy"
-                      class="max-h-[176px] w-auto"
-                    />
-                  ) : (
-                    <img
-                      src="/images/placeholder.svg"
-                      alt={rTitle}
-                      loading="lazy"
-                      class="max-h-[176px] object-contain w-auto"
-                    />
-                  )}
-                </div>
-                <div class="p-3">
-                  <h3 class="font-semibold line-clamp-2">{rTitle}</h3>
-                  <p class="text-sm text-slate-500 line-clamp-2">
-                    {r.data?.description}
-                  </p>
-                  <div class="mt-2 text-xs text-slate-500">
-                    {r.data?.subject && <span>{r.data.subject}</span>}
-                    {r.data?.level && <span> · {r.data.level}</span>}
+    <!-- Relacionados -->
+    {
+      related.length > 0 && (
+        <section class="mt-12">
+          <h2 class="text-xl md:text-2xl font-semibold mb-4">
+            Imprimibles relacionados
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {related.map((r) => {
+              const rHref = `/imprimibles/${r.slug}`;
+              const rTitle = r.data?.title ?? "Imprimible";
+              const rIsMeta =
+                r.data?.cover &&
+                typeof r.data.cover === "object" &&
+                "src" in r.data.cover;
+
+              return (
+                <a
+                  href={rHref}
+                  data-astro-prefetch
+                  class="block rounded-2xl overflow-hidden border hover:shadow-md transition bg-white"
+                >
+                  <div class="flex items-center justify-center bg-slate-100 min-h-[176px]">
+                    {r.data?.cover ? (
+                      rIsMeta ? (
+                        <Image
+                          src={r.data.cover}
+                          alt={rTitle}
+                          width={600}
+                          height={400}
+                          fit="contain"
+                          loading="lazy"
+                          class="max-h-[176px] w-auto"
+                        />
+                      ) : (
+                        <img
+                          src={String(r.data.cover)}
+                          alt={rTitle}
+                          loading="lazy"
+                          class="max-h-[176px] object-contain w-auto"
+                        />
+                      )
+                    ) : (
+                      <img
+                        src="/images/placeholder.svg"
+                        alt={rTitle}
+                        loading="lazy"
+                        class="max-h-[176px] object-contain w-auto"
+                      />
+                    )}
                   </div>
-                </div>
-              </a>
-            );
-          })}
-        </div>
-      </section>
-    )}
+                  <div class="p-3">
+                    <h3 class="font-semibold line-clamp-2">{rTitle}</h3>
+                    <p class="text-sm text-slate-500 line-clamp-2">
+                      {r.data?.description}
+                    </p>
+                    <div class="mt-2 text-xs text-slate-500">
+                      {r.data?.subject && <span>{r.data.subject}</span>}
+                      {r.data?.level && <span> · {r.data.level}</span>}
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )
+    }
   </article>
+
+  <style is:global>
+    .icon {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+  </style>
 </BaseLayout>
