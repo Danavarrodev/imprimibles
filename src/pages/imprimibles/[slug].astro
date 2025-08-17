@@ -61,7 +61,7 @@ const learningLd = {
   inLanguage: "es",
   educationalLevel: level || undefined,
   about: subject || undefined,
-  // learningResourceType: "Worksheet", // descomenta si quieres forzar el tipo
+  // learningResourceType: "Worksheet",
   keywords: Array.isArray(tags) && tags.length ? tags.join(", ") : undefined,
   isAccessibleForFree: true,
   url: pageUrl,
@@ -149,136 +149,132 @@ const relatedLd =
       type="application/ld+json"
       set:html={JSON.stringify(breadcrumbsLd)}
     />
-    {
-      relatedLd && (
-        <script
-          type="application/ld+json"
-          set:html={JSON.stringify(relatedLd)}
-        />
-      )
-    }
+    {relatedLd && (
+      <script
+        type="application/ld+json"
+        set:html={JSON.stringify(relatedLd)}
+      />
+    )}
   </Fragment>
 
   <article class="prose max-w-2xl mx-auto py-8">
     <h1>{title}</h1>
 
-    {
-      cover && (
-        <img
-          src={cover}
-          alt={`Portada de "${title}"`}
-          class="w-full rounded-lg aspect-[4/3] object-cover"
-          loading="lazy"
-          decoding="async"
-        />
-      )
-    }
+    {cover && (
+      <img
+        src={cover}
+        alt={`Portada de "${title}"`}
+        class="w-full rounded-lg aspect-[4/3] object-cover"
+        loading="lazy"
+        decoding="async"
+      />
+    )}
 
     <p class="text-slate-600">{description}</p>
 
-    {
-      date && (
-        <p class="mt-2 text-xs text-slate-500">
-          Publicado el{" "}
-          <time dateTime={new Date(date).toISOString()}>
-            {new Date(date).toLocaleDateString("es-ES", {
-              day: "2-digit",
-              month: "long",
-              year: "numeric",
-            })}
-          </time>
-        </p>
-      )
-    }
+    {date && (
+      <p class="mt-2 text-xs text-slate-500">
+        Publicado el{" "}
+        <time dateTime={new Date(date).toISOString()}>
+          {new Date(date).toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          })}
+        </time>
+      </p>
+    )}
 
-    <ul class="mt-4 text-sm text-slate-500">
-      {
-        subject && (
-          <li>
-            <strong>Asignatura:</strong> {subject}
-          </li>
-        )
-      }
-      {
-        level && (
-          <li>
-            <strong>Nivel:</strong> {level}
-          </li>
-        )
-      }
-      {
-        Array.isArray(tags) && tags.length > 0 && (
-          <li>
-            <strong>Etiquetas:</strong> {tags.join(", ")}
-          </li>
-        )
-      }
-    </ul>
+   <section class="mt-6 rounded-xl bg-slate-50 border p-4 shadow-sm">
+  <h2 class="text-sm font-semibold text-slate-500 mb-3 uppercase">Detalles</h2>
+  <div class="flex flex-wrap gap-4 text-sm">
+    {subject && (
+      <span class="inline-flex items-center gap-1 rounded-full bg-white border px-3 py-1">
+        📘 {subject}
+      </span>
+    )}
+    {level && (
+      <span class="inline-flex items-center gap-1 rounded-full bg-white border px-3 py-1">
+        🎯 {level}
+      </span>
+    )}
+    {Array.isArray(tags) && tags.map((t) => (
+      <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-slate-600 bg-white">
+        #{t}
+      </span>
+    ))}
+  </div>
 
-    {
-      subject && (
-        <div class="mt-4">
-          <a
-            href={`/imprimibles/asignatura/${encodeURIComponent(subject)}/`}
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
-          >
-            Ver más de {subject} <span aria-hidden>→</span>
-          </a>
-        </div>
-      )
-    }
+  <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+    {level && (
+      <a
+        href={`/imprimibles/nivel/${encodeURIComponent(level)}/`}
+        class="px-4 py-2 rounded-lg border bg-white hover:bg-slate-100 transition text-sm text-slate-700"
+      >
+        Ver más de {level}
+      </a>
+    )}
+    {subject && (
+      <a
+        href={`/imprimibles/asignatura/${encodeURIComponent(subject)}/`}
+        class="px-4 py-2 rounded-lg border bg-white hover:bg-slate-100 transition text-sm text-slate-700"
+      >
+        Ver más de {subject}
+      </a>
+    )}
+  </div>
 
-    {
-      pdfUrl && (
-        <a
-          href={pdfUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center px-6 py-3 mt-4 text-white bg-indigo-600 rounded-lg shadow hover:bg-indigo-700 transition"
-          aria-label={`Descargar ${title} en PDF`}
-        >
-          📥 Descargar PDF
-        </a>
-      )
-    }
+  {pdfUrl && (
+    <div class="mt-4">
+      <a
+        href={pdfUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
+      >
+        🧾 Descargar PDF
+      </a>
+    </div>
+  )}
+</section>
 
-    {
-      related.length > 0 && (
-        <section class="mt-12">
-          <h2 class="text-xl font-semibold mb-4">Imprimibles relacionados</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {related.map((r) => {
-              const rCover = r.data?.cover ?? "/og.png";
-              const rHref = `/imprimibles/${r.slug}/`;
-              return (
-                <a
-                  href={rHref}
-                  data-astro-prefetch
-                  class="block rounded-2xl overflow-hidden border hover:shadow transition"
-                >
-                  <img
-                    src={rCover}
-                    alt={r.data?.title}
-                    loading="lazy"
-                    decoding="async"
-                    class="w-full aspect-[4/3] object-cover"
-                  />
-                  <div class="p-3">
-                    <h3 class="font-semibold line-clamp-2">{r.data?.title}</h3>
-                    <p class="text-sm text-slate-500 line-clamp-2">
-                      {r.data?.description}
-                    </p>
-                    <div class="mt-2 text-xs text-slate-500">
-                      {r.data?.subject && <span>{r.data.subject}</span>}
-                      {r.data?.level && <span> · {r.data.level}</span>}
-                    </div>
+    {/* ---- /SECCIÓN VISUAL ---- */}
+
+    {related.length > 0 && (
+      <section class="mt-12">
+        <h2 class="text-xl font-semibold mb-4">Imprimibles relacionados</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {related.map((r) => {
+            const rCover = r.data?.cover ?? "/og.png";
+            const rHref = `/imprimibles/${r.slug}/`;
+            return (
+              <a
+                href={rHref}
+                data-astro-prefetch
+                class="block rounded-2xl overflow-hidden border hover:shadow transition"
+              >
+                <img
+                  src={rCover}
+                  alt={r.data?.title}
+                  loading="lazy"
+                  decoding="async"
+                  class="w-full aspect-[4/3] object-cover"
+                />
+                <div class="p-3">
+                  <h3 class="font-semibold line-clamp-2">{r.data?.title}</h3>
+                  <p class="text-sm text-slate-500 line-clamp-2">
+                    {r.data?.description}
+                  </p>
+                  <div class="mt-2 text-xs text-slate-500">
+                    {r.data?.subject && <span>{r.data.subject}</span>}
+                    {r.data?.level && <span> · {r.data.level}</span>}
                   </div>
-                </a>
-              );
-            })}
-          </div>
-        </section>
-      )
-    }
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    )}
   </article>
 </BaseLayout>
