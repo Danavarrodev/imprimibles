@@ -11,21 +11,28 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { title, description, cover, pdf, subject, level, date, tags } =
-  entry.data;
+const { title, description, cover, pdf, subject, level, date, tags } = entry.data;
 
 const site = Astro.site ?? "https://imprimibles.vercel.app";
-const pageUrl = new URL(`/imprimibles/${entry.slug}/`, site).href;
+// SIN slash final
+const pageUrl = new URL(`/imprimibles/${entry.slug}`, site).href;
 
 // Imagen de portada absoluta (para OG/Twitter y JSON-LD)
 const absCover = cover ? new URL(cover, site).href : undefined;
 const ogImage = absCover ?? new URL("/og.png", site).href;
 
-// PDF absoluto para enlaces y JSON-LD
+// PDF absoluto (SEO/JSON-LD)
 const pdfUrl = pdf
-  ? pdf.startsWith("http://") || pdf.startsWith("https://")
+  ? /^https?:\/\//i.test(pdf)
     ? pdf
     : new URL(pdf.startsWith("/") ? pdf : `/${pdf}`, site).href
+  : undefined;
+
+// HREF para el botón (local en dev si empieza por "/")
+const pdfHref = pdf
+  ? /^https?:\/\//i.test(pdf)
+    ? pdf
+    : (pdf.startsWith("/") ? pdf : `/${pdf}`)
   : undefined;
 
 // Colección completa y relacionados (mismo subject o level)
@@ -45,12 +52,11 @@ const related = all
   })
   .slice(0, 3);
 
-// JSON-LD: recurso + página + breadcrumbs + relacionados
+// JSON-LD
 const organization = {
   "@type": "Organization",
   name: "Imprimibles Educativos",
   url: site,
-  // logo opcional si lo tienes: "logo": new URL("/images/logo.png", site).href,
 };
 
 const learningLd = {
@@ -61,7 +67,6 @@ const learningLd = {
   inLanguage: "es",
   educationalLevel: level || undefined,
   about: subject || undefined,
-  // learningResourceType: "Worksheet",
   keywords: Array.isArray(tags) && tags.length ? tags.join(", ") : undefined,
   isAccessibleForFree: true,
   url: pageUrl,
@@ -72,19 +77,10 @@ const learningLd = {
   publisher: organization,
   mainEntityOfPage: pageUrl,
   potentialAction: pdfUrl
-    ? {
-        "@type": "DownloadAction",
-        target: pdfUrl,
-      }
+    ? { "@type": "DownloadAction", target: pdfUrl }
     : undefined,
   encoding: pdfUrl
-    ? [
-        {
-          "@type": "MediaObject",
-          fileFormat: "application/pdf",
-          contentUrl: pdfUrl,
-        },
-      ]
+    ? [{ "@type": "MediaObject", fileFormat: "application/pdf", contentUrl: pdfUrl }]
     : undefined,
 };
 
@@ -106,7 +102,7 @@ const breadcrumbsLd = {
       "@type": "ListItem",
       position: 1,
       name: "Imprimibles",
-      item: new URL("/imprimibles/", site).href,
+      item: new URL("/imprimibles", site).href, // sin slash
     },
     {
       "@type": "ListItem",
@@ -125,7 +121,7 @@ const relatedLd =
         itemListElement: related.map((r, i) => ({
           "@type": "ListItem",
           position: i + 1,
-          url: new URL(`/imprimibles/${r.slug}/`, site).href,
+          url: new URL(`/imprimibles/${r.slug}`, site).href, // sin slash
           name: r.data?.title,
         })),
       }
@@ -145,15 +141,9 @@ const relatedLd =
 
     <script type="application/ld+json" set:html={JSON.stringify(learningLd)} />
     <script type="application/ld+json" set:html={JSON.stringify(webPageLd)} />
-    <script
-      type="application/ld+json"
-      set:html={JSON.stringify(breadcrumbsLd)}
-    />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbsLd)} />
     {relatedLd && (
-      <script
-        type="application/ld+json"
-        set:html={JSON.stringify(relatedLd)}
-      />
+      <script type="application/ld+json" set:html={JSON.stringify(relatedLd)} />
     )}
   </Fragment>
 
@@ -161,13 +151,20 @@ const relatedLd =
     <h1>{title}</h1>
 
     {cover && (
-      <img
-        src={cover}
-        alt={`Portada de "${title}"`}
-        class="w-full rounded-lg aspect-[4/3] object-cover"
-        loading="lazy"
-        decoding="async"
-      />
+      <figure class="rounded-xl bg-gray-50 p-3">
+        <div class="flex items-center justify-center min-h-[260px] md:min-h-[360px]">
+          <img
+            src={cover}
+            alt={`Portada de "${title}"`}
+            loading="eager"
+            decoding="async"
+            class="w-auto max-h-[360px] md:max-h-[440px] object-contain"
+            width="1200"
+            height="800"
+          />
+        </div>
+        {description && <figcaption class="sr-only">{description}</figcaption>}
+      </figure>
     )}
 
     <p class="text-slate-600">{description}</p>
@@ -185,60 +182,60 @@ const relatedLd =
       </p>
     )}
 
-   <section class="mt-6 rounded-xl bg-slate-50 border p-4 shadow-sm">
-  <h2 class="text-sm font-semibold text-slate-500 mb-3 uppercase">Detalles</h2>
-  <div class="flex flex-wrap gap-4 text-sm">
-    {subject && (
-      <span class="inline-flex items-center gap-1 rounded-full bg-white border px-3 py-1">
-        📘 {subject}
-      </span>
-    )}
-    {level && (
-      <span class="inline-flex items-center gap-1 rounded-full bg-white border px-3 py-1">
-        🎯 {level}
-      </span>
-    )}
-    {Array.isArray(tags) && tags.map((t) => (
-      <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-slate-600 bg-white">
-        #{t}
-      </span>
-    ))}
-  </div>
+    <section class="mt-6 rounded-xl bg-slate-50 border p-4 shadow-sm">
+      <h2 class="text-sm font-semibold text-slate-500 mb-3 uppercase">Detalles</h2>
+      <div class="flex flex-wrap gap-4 text-sm">
+        {subject && (
+          <span class="inline-flex items-center gap-1 rounded-full bg-white border px-3 py-1">
+            📘 {subject}
+          </span>
+        )}
+        {level && (
+          <span class="inline-flex items-center gap-1 rounded-full bg-white border px-3 py-1">
+            🎯 {level}
+          </span>
+        )}
+        {Array.isArray(tags) &&
+          tags.map((t) => (
+            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-slate-600 bg-white">
+              #{t}
+            </span>
+          ))}
+      </div>
 
-  <div class="mt-4 flex flex-col gap-2 sm:flex-row">
-    {level && (
-      <a
-        href={`/imprimibles/nivel/${encodeURIComponent(level)}/`}
-        class="px-4 py-2 rounded-lg border bg-white hover:bg-slate-100 transition text-sm text-slate-700"
-      >
-        Ver más de {level}
-      </a>
-    )}
-    {subject && (
-      <a
-        href={`/imprimibles/asignatura/${encodeURIComponent(subject)}/`}
-        class="px-4 py-2 rounded-lg border bg-white hover:bg-slate-100 transition text-sm text-slate-700"
-      >
-        Ver más de {subject}
-      </a>
-    )}
-  </div>
+      <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+        {level && (
+          <a
+            href={`/imprimibles/nivel/${encodeURIComponent(level)}`}  
+            class="px-4 py-2 rounded-lg border bg-white hover:bg-slate-100 transition text-sm text-slate-700"
+          >
+            Ver más de {level}
+          </a>
+        )}
+        {subject && (
+          <a
+            href={`/imprimibles/asignatura/${encodeURIComponent(subject)}`} 
+            class="px-4 py-2 rounded-lg border bg-white hover:bg-slate-100 transition text-sm text-slate-700"
+          >
+            Ver más de {subject}
+          </a>
+        )}
+      </div>
 
-  {pdfUrl && (
-    <div class="mt-4">
-      <a
-        href={pdfUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
-      >
-        🧾 Descargar PDF
-      </a>
-    </div>
-  )}
-</section>
-
-    {/* ---- /SECCIÓN VISUAL ---- */}
+      {pdfHref && (
+        <div class="mt-4">
+          <a
+            href={pdfHref}  
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
+            aria-label={`Descargar ${title} en PDF`}
+          >
+            🧾 Descargar PDF
+          </a>
+        </div>
+      )}
+    </section>
 
     {related.length > 0 && (
       <section class="mt-12">
@@ -246,20 +243,22 @@ const relatedLd =
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {related.map((r) => {
             const rCover = r.data?.cover ?? "/og.png";
-            const rHref = `/imprimibles/${r.slug}/`;
+            const rHref = `/imprimibles/${r.slug}`; // sin slash final
             return (
               <a
                 href={rHref}
                 data-astro-prefetch
                 class="block rounded-2xl overflow-hidden border hover:shadow transition"
               >
-                <img
-                  src={rCover}
-                  alt={r.data?.title}
-                  loading="lazy"
-                  decoding="async"
-                  class="w-full aspect-[4/3] object-cover"
-                />
+                <div class="flex items-center justify-center bg-gray-50 min-h-[176px]">
+                  <img
+                    src={rCover}
+                    alt={r.data?.title}
+                    loading="lazy"
+                    decoding="async"
+                    class="max-h-[176px] object-contain"
+                  />
+                </div>
                 <div class="p-3">
                   <h3 class="font-semibold line-clamp-2">{r.data?.title}</h3>
                   <p class="text-sm text-slate-500 line-clamp-2">
