@@ -78,7 +78,7 @@ const orgJsonLd = {
     <slot name="head" />
 
     <!-- Evita indexación en no-prod -->
-    {!isProd && <meta name="robots" content="noindex,nofollow" />}
+    {!isProd && <meta name="robots" content="index,follow" />}
 
     {
       isProd && (
