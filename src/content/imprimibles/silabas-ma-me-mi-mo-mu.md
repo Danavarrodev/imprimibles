@@ -4,7 +4,7 @@ description: "Imprimible para practicar sílabas MA-ME-MI-MO-MU con lectura y es
 subject: "lengua"
 level: "primaria"
 tags: ["sílabas", "lectura", "escritura"]
-cover: "/imprimibles/silabas-ma-me-mi-mo-mu/cover.webp"
+cover: "./placeholder.jpg"
 pdf: "/pdfs/silabas-mamemimomu.pdf"
 date: "2025-08-17"
 ---

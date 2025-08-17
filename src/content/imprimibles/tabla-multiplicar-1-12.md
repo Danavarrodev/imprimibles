@@ -4,8 +4,8 @@ description: "Imprimible para aprender y repasar las tablas del 1 al 10. Ideal p
 subject: "matemáticas"
 level: "primaria"
 tags: ["multiplicación", "cálculo", "tablas"]
-cover: "/imprimibles/tablas-multiplicar-1-10/cover.webp"
-pdf: "/pdfs/tablas-1-10.pdf"
+cover: "./tabla-multiplicar-1-12.webp"
+pdf: "/pdfs/tabla-multiplicar-1-12.pdf"
 date: "2025-08-17"
 ---
 

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
+import { Image } from "astro:assets";
 
 export async function getStaticPaths() {
   const entries = await getCollection("imprimibles");
@@ -17,8 +18,7 @@ const site = Astro.site ?? "https://imprimibles.vercel.app";
 // SIN slash final
 const pageUrl = new URL(`/imprimibles/${entry.slug}`, site).href;
 
-// Imagen de portada absoluta (para OG/Twitter y JSON-LD)
-const absCover = cover ? new URL(cover, site).href : undefined;
+const absCover = cover ? new URL(cover.src, site).href : undefined;
 const ogImage = absCover ?? new URL("/og.png", site).href;
 
 // PDF absoluto (SEO/JSON-LD)
@@ -28,7 +28,7 @@ const pdfUrl = pdf
     : new URL(pdf.startsWith("/") ? pdf : `/${pdf}`, site).href
   : undefined;
 
-// HREF para el botón (local en dev si empieza por "/")
+
 const pdfHref = pdf
   ? /^https?:\/\//i.test(pdf)
     ? pdf
@@ -102,7 +102,7 @@ const breadcrumbsLd = {
       "@type": "ListItem",
       position: 1,
       name: "Imprimibles",
-      item: new URL("/imprimibles", site).href, // sin slash
+      item: new URL("/imprimibles", site).href, // sin slash final
     },
     {
       "@type": "ListItem",
@@ -121,7 +121,7 @@ const relatedLd =
         itemListElement: related.map((r, i) => ({
           "@type": "ListItem",
           position: i + 1,
-          url: new URL(`/imprimibles/${r.slug}`, site).href, // sin slash
+          url: new URL(`/imprimibles/${r.slug}`, site).href, // sin slash final
           name: r.data?.title,
         })),
       }
@@ -150,21 +150,32 @@ const relatedLd =
   <article class="prose max-w-2xl mx-auto py-8">
     <h1>{title}</h1>
 
-    {cover && (
+    {cover ? (
       <figure class="rounded-xl bg-gray-50 p-3">
         <div class="flex items-center justify-center min-h-[260px] md:min-h-[360px]">
-          <img
+          <Image
             src={cover}
             alt={`Portada de "${title}"`}
+            width={1200}
+            height={900}
+            fit="contain"
             loading="eager"
-            decoding="async"
-            class="w-auto max-h-[360px] md:max-h-[440px] object-contain"
-            width="1200"
-            height="800"
+            class="w-auto max-h-[360px] md:max-h-[440px]"
           />
         </div>
         {description && <figcaption class="sr-only">{description}</figcaption>}
       </figure>
+    ) : (
+      <div class="flex items-center justify-center bg-gray-50 rounded-xl min-h-[260px] md:min-h-[360px]">
+        <img
+          src="/images/placeholder.svg"
+          alt={title}
+          loading="lazy"
+          class="max-h-[360px] md:max-h-[440px] object-contain"
+          width="1200"
+          height="900"
+        />
+      </div>
     )}
 
     <p class="text-slate-600">{description}</p>
@@ -242,8 +253,8 @@ const relatedLd =
         <h2 class="text-xl font-semibold mb-4">Imprimibles relacionados</h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {related.map((r) => {
-            const rCover = r.data?.cover ?? "/og.png";
             const rHref = `/imprimibles/${r.slug}`; // sin slash final
+            const rTitle = r.data?.title ?? "Imprimible";
             return (
               <a
                 href={rHref}
@@ -251,16 +262,27 @@ const relatedLd =
                 class="block rounded-2xl overflow-hidden border hover:shadow transition"
               >
                 <div class="flex items-center justify-center bg-gray-50 min-h-[176px]">
-                  <img
-                    src={rCover}
-                    alt={r.data?.title}
-                    loading="lazy"
-                    decoding="async"
-                    class="max-h-[176px] object-contain"
-                  />
+                  {r.data?.cover ? (
+                    <Image
+                      src={r.data.cover}
+                      alt={rTitle}
+                      width={600}
+                      height={400}
+                      fit="contain"
+                      loading="lazy"
+                      class="max-h-[176px] w-auto"
+                    />
+                  ) : (
+                    <img
+                      src="/images/placeholder.svg"
+                      alt={rTitle}
+                      loading="lazy"
+                      class="max-h-[176px] object-contain w-auto"
+                    />
+                  )}
                 </div>
                 <div class="p-3">
-                  <h3 class="font-semibold line-clamp-2">{r.data?.title}</h3>
+                  <h3 class="font-semibold line-clamp-2">{rTitle}</h3>
                   <p class="text-sm text-slate-500 line-clamp-2">
                     {r.data?.description}
                   </p>

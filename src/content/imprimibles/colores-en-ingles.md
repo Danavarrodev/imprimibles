@@ -4,7 +4,7 @@ description: "Fichas de vocabulario para aprender los colores en inglés con apo
 subject: "inglés"
 level: "primaria"
 tags: ["vocabulario", "colors", "flashcards"]
-cover: "/imprimibles/colores-en-ingles/cover.webp"
+cover: "./placeholder.jpg"
 pdf: "/pdfs/colores-ingles.pdf"
 date: "2025-08-17"
 ---

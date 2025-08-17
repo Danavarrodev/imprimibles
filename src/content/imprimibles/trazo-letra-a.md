@@ -4,7 +4,7 @@ description: "Fichas de trazo de la letra A con líneas guía para trabajar la m
 subject: "lengua"
 level: "infantil"
 tags: ["trazo", "abecedario", "lectoescritura"]
-cover: "/imprimibles/trazo-letra-a/cover.webp"
+cover: "./placeholder.jpg"
 pdf: "/pdfs/trazo-a.pdf"
 date: "2025-08-17"
 ---

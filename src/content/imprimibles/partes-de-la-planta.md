@@ -4,7 +4,7 @@ description: "Imprimible para identificar raíz, tallo, hojas y flor. Incluye ac
 subject: "ciencias naturales"
 level: "primaria"
 tags: ["plantas", "biología", "etiquetar"]
-cover: "/imprimibles/partes-de-la-planta/cover.webp"
+cover: "./placeholder.jpg"
 pdf: "/pdfs/partes-planta.pdf"
 date: "2025-08-17"
 ---

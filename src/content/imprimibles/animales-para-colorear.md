@@ -4,7 +4,7 @@ description: "Láminas de animales para colorear y recortar. Actividad creativa 
 subject: "arte"
 level: "infantil"
 tags: ["colorear", "recortar", "animales"]
-cover: "/imprimibles/animales-para-colorear/cover.webp"
+cover: "./placeholder.jpg"
 pdf: "/pdfs/animales-colorear.pdf"
 date: "2025-08-17"
 ---

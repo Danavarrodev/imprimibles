@@ -4,7 +4,7 @@ description: "Ficha para aprender y colorear las comunidades autónomas de Espa�
 subject: "ciencias sociales"
 level: "primaria"
 tags: ["mapas", "geografía", "comunidades"]
-cover: "/imprimibles/mapa-de-espana-comunidades/cover.webp"
+cover: "./placeholder.jpg"
 pdf: "/pdfs/mapa-de-espana-comunidades/mapa-comunidades.pdf"
 date: "2025-08-17"
 ---

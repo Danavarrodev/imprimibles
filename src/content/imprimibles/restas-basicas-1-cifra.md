@@ -4,8 +4,8 @@ description: "Ejercicios de resta para practicar operaciones sencillas en primar
 subject: "matemáticas"
 level: "primaria"
 tags: ["restas", "cálculo", "1º primaria"]
-cover: "/imprimibles/restas-basicas-1-cifra/cover.webp"
-pdf: "/pdfs/restas-1-cifra.pdf"
+cover: "./restas-basicas-1-cifra.webp"
+pdf: "/pdfs/restas-basicas-1-cifra.pdf"
 date: "2025-08-17"
 ---
 

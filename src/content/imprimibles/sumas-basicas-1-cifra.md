@@ -4,7 +4,7 @@ description: "Fichas de sumas sencillas para iniciarse en el cálculo mental. De
 subject: "matemáticas"
 level: "primaria"
 tags: ["sumas", "cálculo", "1º primaria"]
-cover: "/images/imprimibles/cover-matematicas.webp"
+cover: "./sumas-basicas-1-cifra.webp"
 pdf: "/pdfs/sumas-basicas-1-cifra.pdf"
 date: "2025-08-17"
 ---
