@@ -1,22 +1,34 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import CardImprimible from "../components/CardImprimible.astro";
+import CardRecurso from "../components/CardRecurso.astro";
 import { getCollection } from "astro:content";
 
 // Contenido
-const items = await getCollection("imprimibles");
+const imprimibles = await getCollection("imprimibles");
+const recursos = await getCollection("recursos");
 const EAGER_COUNT = 6; // 3 columnas x 2 filas. Pon 3 si quieres solo la 1ª fila.
 
 // Orden por fecha (tolerante si falta date)
-const sorted = items
+const sortedImprimibles = imprimibles
   .map((it) => ({ ...it, __ts: new Date(it.data?.date || 0).getTime() }))
   .sort((a, b) => b.__ts - a.__ts);
 
-const latest = sorted.slice(0, 6);
+const sortedRecursos = recursos
+  .map((it) => ({ ...it, __ts: new Date(it.data?.date || 0).getTime() }))
+  .sort((a, b) => b.__ts - a.__ts);
 
-// Subjects únicos para chips
+// Mezcla para "Últimos añadidos" (imprimibles + recursos)
+const latestMixed = [
+  ...sortedImprimibles.map((x) => ({ type: "imprimible", ...x })),
+  ...sortedRecursos.map((x) => ({ type: "recurso", ...x })),
+]
+  .sort((a, b) => b.__ts - a.__ts)
+  .slice(0, EAGER_COUNT);
+
+// Subjects únicos para chips (para el bloque de “Explorar por asignatura”)
 const subjects = Array.from(
-  new Set(items.map((i) => i.data.subject).filter(Boolean)),
+  new Set(imprimibles.map((i) => i.data.subject).filter(Boolean)),
 ).sort((a, b) => a.localeCompare(b, "es"));
 
 // --- ICONOS (SVG inline, sin dependencias) ---
@@ -51,6 +63,7 @@ const websiteJsonLd = {
   name: "Imprimibles Educativos",
   potentialAction: {
     "@type": "SearchAction",
+    // si luego unificas en /materiales, cambia esta URL
     target: `${site}/imprimibles?search={search_term_string}`,
     "query-input": "required name=search_term_string",
   },
@@ -58,8 +71,8 @@ const websiteJsonLd = {
 ---
 
 <BaseLayout
-  title="Imprimibles educativos listos para imprimir | Inicio"
-  description="Descarga gratis fichas, pósters y juegos imprimibles organizados por asignatura y nivel educativo. Recursos en PDF listos para imprimir, con nuevas actividades añadidas cada semana."
+  title="Imprimibles y recursos educativos listos para imprimir | Inicio"
+  description="Descarga gratis fichas, pósters, juegos y plantillas en PDF listos para imprimir. Imprimibles y recursos por asignatura, nivel y categoría."
 >
   <Fragment slot="head">
     <script
@@ -76,29 +89,19 @@ const websiteJsonLd = {
       <h1
         class="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight text-slate-900"
       >
-        Imprimibles educativos <span class="text-indigo-600"
-          >listos para usar</span
+        Material educativo <span class="text-indigo-600"
+          >listo para imprimir</span
         >
       </h1>
       <p class="text-slate-600 text-lg">
-        Recursos por asignatura y nivel con descarga directa en PDF. Pósters,
-        flashcards y juegos pensados para <strong>infantil y primaria</strong>.
+        Fichas, pósters y juegos para <strong>infantil y primaria</strong>, y
+        plantillas útiles para el día a día.
       </p>
       <div class="flex flex-wrap gap-3">
-        <a
-          href="/imprimibles"
-          class="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-5 py-3 text-sm font-medium hover:bg-slate-700 transition"
-        >
-          Ver todos los imprimibles
-          <span aria-hidden="true">→</span>
-        </a>
-        <a
-          href="/contacto"
-          class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-800 hover:bg-slate-50 transition"
-        >
-          Pedir un recurso
-        </a>
+        <a href="/imprimibles" class="btn-primary">Ver imprimibles →</a>
+        <a href="/recursos" class="btn-primary">Ver recursos →</a>
       </div>
+
       <p class="text-sm text-slate-500">
         Gratis · Formato A4 · Listos para imprimir
       </p>
@@ -107,13 +110,12 @@ const websiteJsonLd = {
     <!-- Bloque visual placeholder -->
     <div class="rounded-2xl border border-slate-200 bg-white/70 p-6">
       <p class="text-slate-600">
-        Sugerencia: coloca aquí un collage con 3-4 portadas o una “malla” de
-        ejemplos.
+        Sugerencia: collage con 3-4 portadas o una malla de ejemplos.
       </p>
     </div>
   </section>
 
-  <!-- ACCESOS RÁPIDOS A ASIGNATURAS (con iconos) -->
+  <!-- ACCESOS RÁPIDOS A ASIGNATURAS (imprimibles) -->
   {
     subjects.length > 0 && (
       <section class="mx-auto max-w-7xl px-4 pb-2">
@@ -139,7 +141,7 @@ const websiteJsonLd = {
     )
   }
 
-  <!-- ÚLTIMOS AÑADIDOS -->
+  <!-- ÚLTIMOS AÑADIDOS (mezclado) -->
   <section class="py-12 bg-gradient-to-b from-white to-slate-50">
     <div class="mx-auto max-w-7xl px-4">
       <div
@@ -152,39 +154,45 @@ const websiteJsonLd = {
             Últimos añadidos
           </h2>
           <p class="mt-1 text-slate-600 text-sm md:text-base">
-            Descubre los recursos más recientes listos para imprimir.
+            Lo más reciente del catálogo: imprimibles y recursos.
           </p>
         </div>
-        <a
-          href="/imprimibles"
-          class="mt-4 sm:mt-0 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
-        >
-          Ver todos
-          <span aria-hidden="true">→</span>
-        </a>
+
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {
-          latest.map(({ data, slug }, i) => (
-            <CardImprimible
-              title={data.title}
-              description={data.description}
-              cover={data.cover}
-              subject={data.subject}
-              level={data.level}
-              slug={slug}
-              pdf={data.pdf}
-              eager={i < EAGER_COUNT}
-            />
-          ))
+          latestMixed.map((it, i) =>
+            it.type === "imprimible" ? (
+              <CardImprimible
+                title={it.data.title}
+                description={it.data.description}
+                cover={it.data.cover}
+                subject={it.data.subject}
+                level={it.data.level}
+                slug={it.slug}
+                pdf={it.data.pdf}
+                eager={i < EAGER_COUNT}
+              />
+            ) : (
+              <CardRecurso
+                title={it.data.title}
+                description={it.data.description}
+                cover={it.data.cover}
+                category={it.data.category}
+                tags={it.data.tags}
+                slug={it.slug}
+                pdf={it.data.pdf}
+              />
+            ),
+          )
         }
       </div>
 
       {
-        latest.length === 0 && (
+        latestMixed.length === 0 && (
           <p class="mt-10 rounded-xl border border-dashed p-12 text-center text-slate-600">
-            Aún no hay imprimibles publicados. ¡Vuelve pronto! 😊
+            Aún no hay contenido publicado. ¡Vuelve pronto! 😊
           </p>
         )
       }

@@ -1,0 +1,61 @@
+---
+export interface Props {
+    slug: string;
+    title: string;
+    description: string;
+    cover?: any; // soporta image() (objeto) o string
+    category: string;
+    tags?: string[];
+    pdf: string;
+}
+
+const {
+    slug,
+    title,
+    description,
+    cover,
+    category,
+    tags = [],
+    pdf,
+} = Astro.props;
+---
+
+<article
+    class="group rounded-2xl border shadow-sm hover:shadow-md transition p-3 flex flex-col"
+    data-category={category}
+    data-tags={tags.join(",")}
+>
+    {
+        cover && (
+            <img
+                src={cover.src ?? cover}
+                alt={title}
+                loading="lazy"
+                class="rounded-xl aspect-[4/3] object-cover mb-3"
+                width="600"
+                height="450"
+            />
+        )
+    }
+
+    <h3 class="text-lg font-semibold leading-snug mb-1">{title}</h3>
+    <p class="text-sm opacity-80 line-clamp-3 mb-3">{description}</p>
+
+    <div class="mt-auto flex items-center justify-between gap-2">
+        <span class="text-xs px-2 py-1 rounded-full border">{category}</span>
+        <div class="flex gap-2">
+            <a
+                href={`/recursos/${slug}`}
+                class="text-sm px-3 py-1.5 rounded-xl border hover:shadow-sm"
+            >
+                Ver ficha
+            </a>
+            <a
+                href={pdf}
+                class="text-sm px-3 py-1.5 rounded-xl border hover:shadow-sm"
+            >
+                📥 Descargar
+            </a>
+        </div>
+    </div>
+</article>

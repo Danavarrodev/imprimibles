@@ -1,0 +1,119 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+    const entries = await getCollection("recursos");
+    return entries.map((entry) => ({
+        params: { slug: entry.slug },
+        props: { entry },
+    }));
+}
+
+const { entry } = Astro.props;
+const {
+    title,
+    description,
+    cover,
+    pdf,
+    category,
+    tags = [],
+    date,
+} = entry.data;
+
+const site = Astro.site ?? "https://imprimibles.vercel.app";
+// SIN slash final en pageUrl (siguiendo tu patrón reciente)
+const pageUrl = new URL(`/recursos/${entry.slug}`, site).href;
+
+const absCover = cover ? new URL(cover.src ?? cover, site).href : undefined;
+const ogImage = absCover ?? new URL("/og.png", site).href;
+
+const pdfUrl =
+    pdf.startsWith("http://") || pdf.startsWith("https://")
+        ? pdf
+        : new URL(pdf.startsWith("/") ? pdf : `/${pdf}`, site).href;
+
+const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: title,
+    description: description,
+    datePublished: new Date(date).toISOString(),
+    about: tags,
+    learningResourceType: "Worksheet",
+    inLanguage: "es",
+    url: pageUrl,
+    ...(absCover ? { image: absCover } : {}),
+    ...(pdfUrl
+        ? {
+              associatedMedia: {
+                  "@type": "MediaObject",
+                  contentUrl: pdfUrl,
+                  encodingFormat: "application/pdf",
+              },
+          }
+        : {}),
+    keywords: tags.join(", "),
+};
+---
+
+<BaseLayout
+    title={title}
+    description={description}
+    ogImage={ogImage}
+    ogType="article"
+>
+    <head slot="head">
+        <link rel="canonical" href={pageUrl} />
+        <meta property="og:url" content={pageUrl} />
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        ></script>
+    </head>
+
+    <article class="max-w-3xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4">{title}</h1>
+
+        {
+            cover && (
+                <img
+                    src={cover.src ?? cover}
+                    alt={title}
+                    class="rounded-2xl mb-6 aspect-[4/3] object-cover"
+                    loading="eager"
+                />
+            )
+        }
+
+        <p class="mb-4">{description}</p>
+
+        <ul class="text-sm opacity-80 mb-6 space-y-1">
+            <li><strong>Categoría:</strong> {category}</li>
+            <li>
+                <strong>Fecha:</strong>
+                {new Date(date).toLocaleDateString("es-ES")}
+            </li>
+            {
+                tags.length ? (
+                    <li>
+                        <strong>Etiquetas:</strong> {tags.join(", ")}
+                    </li>
+                ) : null
+            }
+        </ul>
+
+        <div class="flex gap-3">
+            <a
+                href="/recursos"
+                class="inline-flex items-center px-4 py-2 rounded-xl border hover:shadow-sm"
+                >← Volver</a
+            >
+            <a
+                href={pdfUrl}
+                class="inline-flex items-center px-4 py-2 rounded-xl border hover:shadow-sm"
+                >📥 Descargar PDF</a
+            >
+        </div>
+    </article>
+</BaseLayout>
