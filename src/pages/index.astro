@@ -31,7 +31,6 @@ const SVG = {
 } as const;
 
 type SvgKey = keyof typeof SVG;
-// Mapa de asignatura -> icono
 function subjectIconKey(label: string): SvgKey {
   const k = String(label).toLowerCase();
   if (k === "matemáticas" || k === "matematicas") return "calc";
@@ -40,14 +39,35 @@ function subjectIconKey(label: string): SvgKey {
   if (k === "ciencias sociales") return "globe";
   if (k === "inglés" || k === "ingles") return "lang";
   if (k === "arte") return "palette";
-  return "doc"; 
+  return "doc";
 }
+
+// JSON-LD WebSite + SearchAction (SEO sitelinks)
+const site = Astro.site ?? "https://imprimibleseduca.com";
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  url: site,
+  name: "Imprimibles Educativos",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${site}/imprimibles?search={search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
+};
 ---
 
 <BaseLayout
   title="Imprimibles educativos listos para imprimir | Inicio"
   description="Descarga gratis fichas, pósters y juegos imprimibles organizados por asignatura y nivel educativo. Recursos en PDF listos para imprimir, con nuevas actividades añadidas cada semana."
 >
+  <Fragment slot="head">
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(websiteJsonLd)}
+    />
+  </Fragment>
+
   <!-- HERO -->
   <section
     class="mx-auto max-w-7xl px-4 pt-10 pb-8 grid gap-8 md:grid-cols-2 items-center"
@@ -66,7 +86,7 @@ function subjectIconKey(label: string): SvgKey {
       </p>
       <div class="flex flex-wrap gap-3">
         <a
-          href="/imprimibles/"
+          href="/imprimibles"
           class="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-5 py-3 text-sm font-medium hover:bg-slate-700 transition"
         >
           Ver todos los imprimibles
@@ -104,10 +124,9 @@ function subjectIconKey(label: string): SvgKey {
           {subjects.map((s) => {
             const maybe = subjectIconKey(s);
             const svg = SVG[maybe] ?? SVG.doc;
-
             return (
               <a
-                href={`/imprimibles/?subject=${encodeURIComponent(s)}`}
+                href={`/imprimibles/asignatura/${encodeURIComponent(s)}`}
                 class="inline-flex items-center gap-2 rounded-full bg-slate-100 text-slate-800 px-4 py-2 text-sm font-medium hover:bg-indigo-100 hover:text-indigo-700 transition"
               >
                 <span class="inline-flex text-slate-700" set:html={svg} />
@@ -137,7 +156,7 @@ function subjectIconKey(label: string): SvgKey {
           </p>
         </div>
         <a
-          href="/imprimibles/"
+          href="/imprimibles"
           class="mt-4 sm:mt-0 inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
         >
           Ver todos
@@ -173,7 +192,6 @@ function subjectIconKey(label: string): SvgKey {
   </section>
 
   <style is:global>
-    /* Tamaño/estilo de los SVG de chips */
     .icon {
       width: 16px;
       height: 16px;

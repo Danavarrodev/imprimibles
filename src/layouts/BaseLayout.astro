@@ -2,185 +2,169 @@
 import "../styles/global.css";
 /** Props configurables desde cada página */
 const {
-  title = "Imprimibles Educativos",
-  description = "Recursos listos para imprimir",
-  ogImage = "/og.png",
-  ogType = "website", // usa "article" en fichas
-  twitterSite = "", // ej: "@tuusuario" (opcional)
+  title = "Imprimibles Educativos",
+  description = "Recursos listos para imprimir",
+  ogImage = "/og.png",
+  ogType = "website", // usa "article" en fichas
+  twitterSite = "", // ej: "@tuusuario" (opcional)
+  canonicalUrl, // Nueva prop opcional
 } = Astro.props;
 
 /** Entorno y URLs */
 const isProd = import.meta.env.MODE === "production";
 const site = Astro.site ?? "https://imprimibleseduca.com";
+
 function normalizeCanonical(u: string): string {
-  const url = new URL(u);
-  url.search = ""; 
-  url.hash = "";   
-  if (url.pathname !== "/") {
-    url.pathname = url.pathname.replace(/\/+$/, ""); // sin barra final
-  }
-  return url.href;
+  const url = new URL(u);
+  url.search = "";
+  url.hash = "";
+  // NORMA: SIN barra final (salvo "/")
+  if (url.pathname !== "/") {
+    url.pathname = url.pathname.replace(/\/+$/, "");
+  }
+  return url.href;
 }
 
-
-const rawCanonical = Astro.url?.href ?? new URL("/", site).href;
-const canonical = normalizeCanonical(rawCanonical);
+// Lógica de canónica: usa la prop si existe, si no, la genera automáticamente
+const defaultCanonical = normalizeCanonical(Astro.url?.href ?? new URL("/", site).href);
+const canonical = canonicalUrl ?? defaultCanonical;
 
 /** Asegura ogImage absoluto */
-const absOg = ogImage.startsWith("http")
-  ? ogImage
-  : new URL(ogImage, site).href;
+const absOg = ogImage.startsWith("http") ? ogImage : new URL(ogImage, site).href;
 
 /** JSON-LD de organización */
 const orgJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "@id": `${site}#organization`,
-  name: "Imprimibles Educativos",
-  url: site,
-  logo: new URL("/icon.svg", site).href,
-  image: new URL("/og.png", site).href,
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${site}#organization`,
+  name: "Imprimibles Educativos",
+  url: site,
+  logo: new URL("/icon.svg", site).href,
+  image: new URL("/og.png", site).href,
 };
 ---
 
 <!doctype html>
 <html lang="es" class="h-full">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>{title}</title>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{title}</title>
 
-    <!-- Fuente (Inter) -->
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
-      rel="stylesheet"
-    />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
 
-    <!-- Canonical / Hreflang -->
-    <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang="es-ES" href={canonical} />
-    <link rel="alternate" hreflang="x-default" href={canonical} />
+        <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="es-ES" href={canonical} />
+    <link rel="alternate" hreflang="x-default" href={canonical} />
 
-    <!-- Favicon / PWA -->
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#111827" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#111827" />
 
-    <!-- Meta SEO -->
-    <meta name="description" content={description} />
-    <meta property="og:site_name" content="Imprimibles Educativos" />
-    <meta property="og:locale" content="es_ES" />
-    <meta property="og:type" content={ogType} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:image" content={absOg} />
-    <meta property="og:url" content={canonical} />
+        <meta name="description" content={description} />
+    <meta property="og:site_name" content="Imprimibles Educativos" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={absOg} />
+    <meta property="og:url" content={canonical} />
 
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    {twitterSite && <meta name="twitter:site" content={twitterSite} />}
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={absOg} />
+        <meta name="twitter:card" content="summary_large_image" />
+    {twitterSite && <meta name="twitter:site" content={twitterSite} />}
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={absOg} />
 
-    <!-- JSON-LD Organization -->
-    <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
+        <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
 
-    <!-- Slot para metas/JSON-LD específicos de cada página -->
-    <slot name="head" />
+        <slot name="head" />
 
-    <!-- Evita indexación en no-prod -->
-    {!isProd && <meta name="robots" content="noindex,nofollow" />}
-    {isProd && (
-      <>
-        {/* Google Tag Manager */}
-        <script is:inline>
-          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-          })(window,document,'script','dataLayer','GTM-586PS87V');
-        </script>
-        {/* End Google Tag Manager */}
-      </>
-    )}
+        {!isProd && <meta name="robots" content="noindex,nofollow" />}
 
-      </head>
+    {isProd && (
+      <>
+        {/* Google Tag Manager */}
+        <script is:inline>
+          {(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer','GTM-586PS87V');}
+        </script>
+        {/* End Google Tag Manager */}
+      </>
+    )}
+  </head>
 
-      <body class="h-full bg-slate-50 text-slate-900 antialiased flex flex-col">
-        {isProd && (
-      <>
-        {/* Google Tag Manager (noscript) */}
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-586PS87V"
-            height="0" width="0" style="display:none;visibility:hidden"></iframe>
-        </noscript>
-        {/* End Google Tag Manager (noscript) */}
-      </>
-    )}
+  <body class="h-full bg-slate-50 text-slate-900 antialiased flex flex-col">
+    {isProd && (
+      <>
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-586PS87V"
+            height="0" width="0" style="display:none;visibility:hidden"></iframe>
+        </noscript>
+        {/* End Google Tag Manager (noscript) */}
+      </>
+    )}
 
+        <header class="sticky top-0 z-50 border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <nav class="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
+        <a href="/" class="font-bold text-lg tracking-tight text-indigo-600">
+          Imprimibles<span class="text-slate-800">EDU</span>
+        </a>
+        <ul class="flex items-center gap-2">
+          <li>
+            <a
+              href="/imprimibles"
+              class="px-3 py-1.5 rounded-full text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+            >
+              Imprimibles
+            </a>
+          </li>
+          <li>
+            <a
+              href="/sobre-mi"
+              class="px-3 py-1.5 rounded-full text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+            >
+              Sobre mí
+            </a>
+          </li>
+          <li>
+            <a
+              href="/contacto"
+              class="px-3 py-1.5 rounded-full text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+            >
+              Contacto
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </header>
 
-    <!-- Header -->
-    <header
-      class="sticky top-0 z-50 border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60"
-    >
-      <nav
-        class="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between"
-      >
-        <a href="/" class="font-bold text-lg tracking-tight text-indigo-600">
-          Imprimibles<span class="text-slate-800">EDU</span>
-        </a>
-        <ul class="flex items-center gap-2">
-          <li>
-            <a
-              href="/imprimibles/"
-              class="px-3 py-1.5 rounded-full text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
-            >
-              Imprimibles
-            </a>
-          </li>
-          <li>
-            <a
-              href="/sobre-mi"
-              class="px-3 py-1.5 rounded-full text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
-            >
-              Sobre mí
-            </a>
-          </li>
-          <li>
-            <a
-              href="/contacto"
-              class="px-3 py-1.5 rounded-full text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
-            >
-              Contacto
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </header>
+        <main class="mx-auto max-w-6xl px-4 sm:px-6 py-8 w-full flex-1">
+      <slot />
+    </main>
 
-    <!-- Main -->
-    <main class="mx-auto max-w-6xl px-4 sm:px-6 py-8 w-full flex-1">
-      <slot />
-    </main>
-
-    <!-- Footer integrado -->
-    <footer class="mt-12 border-t bg-white">
-      <div
-        class="mx-auto max-w-6xl px-4 sm:px-6 py-8 text-sm text-slate-600 flex flex-col sm:flex-row items-center justify-between gap-2"
-      >
-        <p>© {new Date().getFullYear()} Imprimibles Educativos</p>
-        <p class="flex items-center gap-3">
-          <a href="/imprimibles" class="hover:underline">Recursos</a>
-          <span aria-hidden="true">·</span>
-          <a href="/sobre-mi" class="hover:underline">Sobre mí</a>
-          <span aria-hidden="true">·</span>
-          <a href="/contacto" class="hover:underline">Contacto</a>
-        </p>
-      </div>
-    </footer>
-  </body>
+        <footer class="mt-12 border-t bg-white">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6 py-8 text-sm text-slate-600 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p>© {new Date().getFullYear()} Imprimibles Educativos</p>
+        <p class="flex items-center gap-3">
+          <a href="/imprimibles" class="hover:underline">Recursos</a>
+          <span aria-hidden="true">·</span>
+          <a href="/sobre-mi" class="hover:underline">Sobre mí</a>
+          <span aria-hidden="true">·</span>
+          <a href="/contacto" class="hover:underline">Contacto</a>
+        </p>
+      </div>
+    </footer>
+  </body>
 </html>

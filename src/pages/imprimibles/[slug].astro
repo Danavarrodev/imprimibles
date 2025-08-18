@@ -18,32 +18,32 @@ const { title, description, cover, pdf, subject, level, date, tags } =
   entry.data;
 
 /** Utilidades */
-const site = Astro.site ?? "https://imprimibles.vercel.app";
+const site = Astro.site; // coherente con astro.config.mjs
+
+// Helper para convertir a URL absoluta (sirve para cover y pdf)
+function toAbs(u?: string | { src: string }) {
+  if (!u) return undefined;
+  if (typeof u === "object" && "src" in u) return new URL(u.src, site).href;
+  const s = String(u);
+  if (/^https?:\/\//i.test(s)) return s;
+  return new URL(s.startsWith("/") ? s : `/${s}`, site).href;
+}
+
 const pageUrl = new URL(`/imprimibles/${entry.slug}`, site).href;
 
-const isMeta = cover && typeof cover === "object" && "src" in cover;
-const coverSrcAbs = cover
-  ? isMeta
-    ? new URL(cover.src, site).href
-    : new URL(String(cover), site).href
-  : undefined;
-
-const ogImage = coverSrcAbs ?? new URL("/og.png", site).href;
+const absCover = toAbs(cover) ?? new URL("/og.png", site).href;
+const ogImage = absCover;
 
 /** PDF absoluto (SEO/JSON-LD) */
-const pdfUrl = pdf
-  ? /^https?:\/\//i.test(pdf)
-    ? pdf
-    : new URL(pdf.startsWith("/") ? pdf : `/${pdf}`, site).href
-  : undefined;
+const pdfUrl = toAbs(pdf);
 
-/** HREF para botón (dev-friendly) */
+/** HREF para botón (dev-friendly/relativo si es interno) */
 const pdfHref = pdf
-  ? /^https?:\/\//i.test(pdf)
-    ? pdf
-    : pdf.startsWith("/")
-      ? pdf
-      : `/${pdf}`
+  ? /^https?:\/\//i.test(String(pdf))
+    ? String(pdf)
+    : String(pdf).startsWith("/")
+      ? String(pdf)
+      : `/${String(pdf)}`
   : undefined;
 
 /** Relacionados (mismo subject o level) */
@@ -77,12 +77,12 @@ const learningLd = {
   description,
   inLanguage: "es",
   educationalLevel: level || undefined,
-  about: subject || undefined,
+  about: subject ? [{ "@type": "Thing", name: subject }] : undefined,
   keywords: Array.isArray(tags) && tags.length ? tags.join(", ") : undefined,
   isAccessibleForFree: true,
   url: pageUrl,
-  image: coverSrcAbs,
-  thumbnailUrl: coverSrcAbs,
+  image: absCover,
+  thumbnailUrl: absCover,
   datePublished: date ? new Date(date).toISOString() : undefined,
   author: organization,
   publisher: organization,
@@ -99,16 +99,6 @@ const learningLd = {
         },
       ]
     : undefined,
-};
-
-const webPageLd = {
-  "@context": "https://schema.org",
-  "@type": "WebPage",
-  name: title,
-  url: pageUrl,
-  primaryImageOfPage: coverSrcAbs,
-  description,
-  isPartOf: { "@type": "WebSite", name: "Imprimibles Educativos", url: site },
 };
 
 const breadcrumbsLd = {
@@ -164,12 +154,9 @@ function subjectIcon(label?: string) {
   ogType="article"
 >
   <Fragment slot="head">
-    <link rel="canonical" href={pageUrl} />
-    <meta property="og:url" content={pageUrl} />
     {pdfUrl && <link rel="alternate" type="application/pdf" href={pdfUrl} />}
 
     <script type="application/ld+json" set:html={JSON.stringify(learningLd)} />
-    <script type="application/ld+json" set:html={JSON.stringify(webPageLd)} />
     <script
       type="application/ld+json"
       set:html={JSON.stringify(breadcrumbsLd)}
@@ -220,7 +207,7 @@ function subjectIcon(label?: string) {
       >
         {
           cover ? (
-            isMeta ? (
+            typeof cover === "object" && "src" in cover ? (
               <Image
                 src={cover}
                 alt={`Portada de "${title}"`}
