@@ -1,0 +1,13 @@
+{
+    "headers": [
+        {
+            "source": "/pdfs/(.*)",
+            "headers": [
+                {
+                    "key": "Link",
+                    "value": "<https://imprimibleseduca.com/pdfs/$1>; rel=\"canonical\""
+                }
+            ]
+        }
+    ]
+}
