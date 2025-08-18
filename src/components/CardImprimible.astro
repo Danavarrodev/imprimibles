@@ -11,6 +11,19 @@ const {
   pdf,
   eager = false,
 } = Astro.props;
+
+const site = Astro.site ?? 'https://imprimibleseduca.com';
+
+// PDF absoluto y sin espacios sin codificar
+function buildPdfUrl(p?: string) {
+  if (!p) return null;
+  const raw = p.startsWith('http')
+    ? p
+    : (p.startsWith('/') ? p : `/${p}`);
+  // Si guardas todos los PDFs en /pdfs/, puedes forzar: const raw = p.startsWith('/') ? p : `/pdfs/${p}`;
+  return encodeURI(new URL(raw, site).href);
+}
+const pdfUrl = buildPdfUrl(pdf);
 ---
 
 <article
@@ -19,7 +32,12 @@ const {
   data-subject={subject}
   data-level={level}
 >
-  <a href={`/imprimibles/${slug}/`} class="block">
+  {/* Enlace principal a la ficha */}
+  <a
+    href={`/imprimibles/${slug}/`}
+    aria-label={`Ver ficha: ${title}`}
+    class="block"
+  >
     <div class="flex items-center justify-center bg-gray-50 rounded-t-xl min-h-[176px]">
       {cover ? (
         <Image
@@ -28,8 +46,8 @@ const {
           width={600}
           height={400}
           fit="contain"
-          loading={eager ? 'eager' : 'lazy'}        
-          fetchpriority={eager ? 'high' : 'auto'}   
+          loading={eager ? 'eager' : 'lazy'}
+          fetchpriority={eager ? 'high' : 'auto'}
           sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
           class="max-h-[176px] w-auto"
         />
@@ -66,18 +84,23 @@ const {
           </span>
         )}
       </div>
-
-      <div class="mt-4 flex items-center gap-2">
-        <span class="text-sm text-gray-500">Ver ficha</span>
-        {pdf && (
-          <a
-            href={pdf.startsWith('/') ? pdf : '/' + pdf}
-            class="text-sm underline hover:no-underline"
-          >
-            Descargar PDF
-          </a>
-        )}
-      </div>
     </div>
   </a>
+
+  {/* Acciones separadas del enlace principal (ya no hay anchors anidados) */}
+  <div class="px-4 pb-4">
+    <div class="mt-2 flex items-center gap-2">
+      <span class="text-sm text-gray-500">Ver ficha</span>
+      {pdfUrl && (
+        <a
+          href={pdfUrl}
+          class="text-sm underline hover:no-underline"
+          data-gtm="file_download"
+          download
+        >
+          Descargar PDF
+        </a>
+      )}
+    </div>
+  </div>
 </article>
