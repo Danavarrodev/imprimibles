@@ -4,8 +4,8 @@ description: "Imprimible de ciencias naturales para identificar raíz, tallo, ho
 subject: "ciencias naturales"
 level: "primaria"
 tags: ["plantas", "biología", "etiquetar"]
-cover: "./placeholder.jpg"
-pdf: "/pdfs/partes-planta.pdf"
+cover: "./partes-de-la-planta.webp"
+pdf: "/pdfs/partes-de-la-planta.pdf"
 date: "2025-08-17"
 ---
 
