@@ -1,15 +1,12 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
 import CardRecurso from "../../components/CardRecurso.astro";
 
+// Dataset
 const all = await getCollection("recursos");
 
-// Orden por fecha (tolerante si falta date)
-const sorted = all
-  .map((it) => ({ ...it, __ts: new Date(it.data?.date || 0).getTime() }))
-  .sort((a, b) => b.__ts - a.__ts);
-
+// Listas únicas
 const categories = Array.from(new Set(all.map((x) => x.data.category)))
   .filter(Boolean)
   .sort((a, b) => a.localeCompare(b, "es"));
@@ -19,8 +16,16 @@ const tags = Array.from(new Set(all.flatMap((x) => x.data.tags ?? [])))
 
 const EAGER_COUNT = 12;
 
-// Subconjunto realmente mostrado en la página
-const displayed = sorted.slice(0, EAGER_COUNT);
+// Mapeo a items (como en imprimibles)
+const items = all.map((x) => ({
+  slug: x.slug,
+  title: x.data.title,
+  description: x.data.description,
+  cover: x.data.cover,
+  category: x.data.category,
+  tags: x.data.tags ?? [],
+  pdf: x.data.pdf,
+}));
 
 // 🔗 dominio para JSON‑LD
 const site = (Astro.site ?? "https://imprimibleseduca.com")
@@ -29,13 +34,13 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
 ---
 
 <BaseLayout
-  title="Recursos"
-  description="Plantillas y materiales útiles para el día a día"
+  title="Recursos | Plantillas y materiales útiles"
+  description="Encuentra recursos descargables para el día a día. Filtra por categoría y etiqueta."
 >
-  <!-- ✅ SEO: canónico base + noindex en variantes con filtros -->
   <Fragment slot="head">
-    <!-- Canónico estático a la versión limpia -->
-    <link rel="canonical" href={`${site}/recursos`} />
+    <!-- Canonical fijo -->
+    <link rel="canonical" href="https://imprimibleseduca.com/recursos" />
+    <!-- Noindex en variantes con querystring -->
     <script is:inline>
       if (typeof window !== "undefined" && window.location.search.length > 1) {
         const meta = document.createElement("meta");
@@ -43,112 +48,207 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
         meta.content = "noindex, follow";
         document.head.appendChild(meta);
 
-        // Si hay parámetros, aseguramos canónico limpio
         const link = document.createElement("link");
         link.rel = "canonical";
-        link.href = `${location.origin}/recursos`;
+        link.href = "https://imprimibleseduca.com/recursos";
         document.head.appendChild(link);
       }
     </script>
   </Fragment>
 
-  <h1 class="text-3xl font-bold mb-4">Recursos</h1>
+  <main class="bg-gray-50">
+    <!-- HERO (idéntico en layout) -->
+    <section class="mx-auto max-w-7xl px-4 pt-10 pb-6">
+      <div class="rounded-2xl bg-white/60 ring-1 ring-gray-200 p-6 md:p-8">
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+          Recursos
+        </h1>
+        <p class="mt-2 text-gray-600 max-w-2xl">
+          Plantillas y materiales listos para descargar. Filtra por
+          categoría y etiqueta, o explora todo el catálogo.
+        </p>
 
-  <!-- Barra filtros -->
-  <div
-    class="sticky top-0 z-10 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-y py-3 mb-6"
-  >
-    <div class="max-w-6xl mx-auto px-2 grid grid-cols-1 md:grid-cols-3 gap-3">
-      <select id="filter-category" class="border rounded-xl px-3 py-2">
-        <option value="">Todas las categorías</option>
-        {categories.map((c) => <option value={c}>{c}</option>)}
-      </select>
+        <!-- Accesos rápidos (chips) -->
+        <div class="mt-4 flex flex-wrap gap-2">
+          {
+            categories.slice(0, 6).map((c) => (
+              <button
+                class="quick-chip rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
+                data-quick="category"
+                data-value={c}
+              >
+                {c}
+              </button>
+            ))
+          }
+          {
+            tags.slice(0, 6).map((t) => (
+              <button
+                class="quick-chip rounded-full bg-gray-900 text-white px-3 py-1.5 text-sm hover:opacity-90"
+                data-quick="tag"
+                data-value={t}
+              >
+                #{t}
+              </button>
+            ))
+          }
+        </div>
+      </div>
+    </section>
 
-      <input
-        id="filter-q"
-        type="search"
-        placeholder="Buscar por título, descripción o etiqueta…"
-        class="border rounded-xl px-3 py-2"
-      />
+    <!-- FILTROS sticky (mismo patrón) -->
+    <section class="sticky top-0 z-10 border-b border-gray-200 bg-white/90 backdrop-blur">
+      <div class="mx-auto max-w-7xl px-4 py-3">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div class="flex items-center gap-3">
+            <label class="text-sm text-gray-700 flex items-center gap-2">
+              Categoría
+              <select
+                id="f-category"
+                class="rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900"
+                data-filter="category"
+              >
+                <option value="">Todas</option>
+                {categories.map((c) => <option value={c}>{c}</option>)}
+              </select>
+            </label>
+            <label class="text-sm text-gray-700 flex items-center gap-2">
+              Etiqueta
+              <select
+                id="f-tag"
+                class="rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900"
+                data-filter="tag"
+              >
+                <option value="">Todas</option>
+                {tags.map((t) => <option value={t}>{t}</option>)}
+              </select>
+            </label>
+          </div>
+          <div class="flex items-center gap-3">
+            <input
+              id="f-search"
+              type="search"
+              placeholder="Buscar por título…"
+              class="w-64 rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900"
+            />
+            <button
+              type="button"
+              id="f-clear"
+              class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-      <select id="filter-tag" class="border rounded-xl px-3 py-2">
-        <option value="">Todas las etiquetas</option>
-        {tags.map((t) => <option value={t}>{t}</option>)}
-      </select>
-    </div>
-  </div>
-
-  <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {
-      displayed.map((r) => (
-        <CardRecurso
-          slug={r.slug}
-          title={r.data.title}
-          description={r.data.description}
-          cover={r.data.cover}
-          category={r.data.category}
-          tags={r.data.tags}
-          pdf={r.data.pdf}
-        />
-      ))
-    }
-  </div>
-
-  <script>
-    const q = document.getElementById("filter-q");
-    const sc = document.getElementById("filter-category");
-    const st = document.getElementById("filter-tag");
-    const grid = document.getElementById("grid");
-
-    function norm(s) {
-      return (s || "").toLowerCase();
-    }
-
-    function applyFilters() {
-      const qv = norm(q.value);
-      const cat = sc.value;
-      const tag = st.value;
-
-      for (const card of grid.children) {
-        const title = norm(card.querySelector("h3")?.textContent);
-        const desc = norm(card.querySelector("p")?.textContent);
-        const cardCat = card.getAttribute("data-category") || "";
-        const cardTags = (card.getAttribute("data-tags") || "")
-          .split(",")
-          .map(norm);
-
-        let ok = true;
-
-        if (cat && cardCat !== cat) ok = false;
-        if (tag && !cardTags.includes(norm(tag))) ok = false;
-
-        if (qv) {
-          const hay =
-            title.includes(qv) ||
-            desc.includes(qv) ||
-            cardTags.some((t) => t.includes(qv));
-          if (!hay) ok = false;
+    <!-- GRID (mismas columnas y gaps) -->
+    <section class="mx-auto max-w-7xl px-4 py-8">
+      <div
+        id="cards"
+        class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      >
+        {
+          items.map((it, i) => (
+            <CardRecurso
+              slug={it.slug}
+              title={it.title}
+              description={it.description}
+              cover={it.cover}
+              category={it.category}
+              tags={it.tags}
+              pdf={it.pdf}
+              eager={i < EAGER_COUNT}
+            />
+          ))
         }
+      </div>
 
-        card.style.display = ok ? "" : "none";
+      <div
+        id="empty"
+        class="hidden mt-10 rounded-xl border border-dashed p-12 text-center text-gray-600"
+      >
+        No hay resultados con esos filtros.
+      </div>
+    </section>
+  </main>
+
+  <!-- Script de filtrado (calcado al de imprimibles, adaptado) -->
+  <script is:raw>
+    (function () {
+      const $cards = document.getElementById("cards");
+      const $empty = document.getElementById("empty");
+      const $cat = document.getElementById("f-category");
+      const $tag = document.getElementById("f-tag");
+      const $search = document.getElementById("f-search");
+      const $clear = document.getElementById("f-clear");
+
+      const data = Array.from($cards.children).map((card) => ({
+        card,
+        category: card.getAttribute("data-category") || "",
+        tags: (card.getAttribute("data-tags") || "").toLowerCase(),
+        title: (card.getAttribute("data-title") || "").toLowerCase(),
+      }));
+
+      function apply() {
+        const fc = $cat.value || "";
+        const ft = ($tag.value || "").toLowerCase();
+        const q = ($search.value || "").toLowerCase().trim();
+
+        let visible = 0;
+        for (const it of data) {
+          const okC = !fc || it.category === fc;
+          const okT = !ft || it.tags.split(",").includes(ft);
+          const okQ = !q || it.title.includes(q);
+          const show = okC && okT && okQ;
+          it.card.style.display = show ? "" : "none";
+          if (show) visible++;
+        }
+        $empty.classList.toggle("hidden", visible !== 0);
       }
-    }
 
-    q.addEventListener("input", applyFilters);
-    sc.addEventListener("change", applyFilters);
-    st.addEventListener("change", applyFilters);
+      [$cat, $tag, $search].forEach((el) => el && el.addEventListener("input", apply));
+      $clear?.addEventListener("click", () => {
+        $cat.value = "";
+        $tag.value = "";
+        $search.value = "";
+        apply();
+      });
+
+      // Accesos rápidos
+      document.querySelectorAll(".quick-chip").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const type = btn.getAttribute("data-quick");
+          const val = btn.getAttribute("data-value") || "";
+          if (type === "category") $cat.value = val;
+          if (type === "tag") $tag.value = val;
+          apply();
+          const sticky = document.querySelector("section.sticky");
+          if (sticky) {
+            window.scrollTo({ top: sticky.offsetTop, behavior: "smooth" });
+          }
+        });
+      });
+
+      apply();
+    })();
   </script>
 
-  <!-- ✅ SEO: JSON‑LD ItemList SOLO de los elementos mostrados -->
+  <style is:global>
+    .quick-chip:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  </style>
+
+  <!-- JSON-LD: listado de recursos (idéntico formato) -->
   <script
     type="application/ld+json"
     set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "ItemList",
-      itemListElement: displayed.map((r, idx) => ({
+      itemListElement: items.map((it, idx) => ({
         "@type": "ListItem",
         position: idx + 1,
-        url: `${site}/recursos/${r.slug}`,
+        url: `${site}/recursos/${it.slug}`,
       })),
     })}
   />

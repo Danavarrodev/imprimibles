@@ -1,7 +1,9 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
+import { Image } from "astro:assets";
 
+/** Paths estáticos */
 export async function getStaticPaths() {
     const entries = await getCollection("recursos");
     return entries.map((entry) => ({
@@ -10,6 +12,7 @@ export async function getStaticPaths() {
     }));
 }
 
+/** Props */
 const { entry } = Astro.props;
 const {
     title,
@@ -21,26 +24,57 @@ const {
     date,
 } = entry.data;
 
-const site = Astro.site ?? "https://imprimibles.vercel.app";
-// SIN slash final en pageUrl (siguiendo tu patrón reciente)
+/** Utilidades compartidas (idénticas a imprimibles) */
+const site = Astro.site;
+
+function toAbs(u?: string | { src: string }) {
+    if (!u) return undefined;
+    if (typeof u === "object" && "src" in u) return new URL(u.src, site).href;
+    const s = String(u);
+    if (/^https?:\/\//i.test(s)) return s;
+    return new URL(s.startsWith("/") ? s : `/${s}`, site).href;
+}
+
 const pageUrl = new URL(`/recursos/${entry.slug}`, site).href;
+const absCover = toAbs(cover) ?? new URL("/og.png", site).href;
+const ogImage = absCover;
+const pdfUrl = toAbs(pdf);
 
-const absCover = cover ? new URL(cover.src ?? cover, site).href : undefined;
-const ogImage = absCover ?? new URL("/og.png", site).href;
+/** HREF para botón (relativo si es interno; idéntico patrón) */
+const pdfHref = pdf
+    ? /^https?:\/\//i.test(String(pdf))
+        ? String(pdf)
+        : String(pdf).startsWith("/")
+          ? String(pdf)
+          : `/${String(pdf)}`
+    : undefined;
 
-const pdfUrl =
-    pdf.startsWith("http://") || pdf.startsWith("https://")
-        ? pdf
-        : new URL(pdf.startsWith("/") ? pdf : `/${pdf}`, site).href;
+/** (Opcional) Relacionados por misma categoría o tag — mismo bloque que imprimibles */
+const all = await getCollection("recursos");
+const related = all
+    .filter((e) => e.slug !== entry.slug)
+    .filter((e) => {
+        const d = e.data || {};
+        const sameCat = category && d.category && d.category === category;
+        const shareTag = (Array.isArray(tags) ? tags : []).some((t) =>
+            (d.tags ?? []).includes(t),
+        );
+        return sameCat || shareTag;
+    })
+    .sort((a, b) => {
+        const da = new Date(a.data?.date ?? 0).getTime();
+        const db = new Date(b.data?.date ?? 0).getTime();
+        return db - da;
+    })
+    .slice(0, 3);
 
+/** JSON‑LD (mantengo tu tipo y estructura; sólo reuso helpers) */
 const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LearningResource",
     name: title,
-    description: description,
-    datePublished: new Date(date).toISOString(),
-    about: tags,
-    learningResourceType: "Worksheet",
+    description,
+    datePublished: date ? new Date(date).toISOString() : undefined,
     inLanguage: "es",
     url: pageUrl,
     ...(absCover ? { image: absCover } : {}),
@@ -53,67 +87,243 @@ const jsonLd = {
               },
           }
         : {}),
-    keywords: tags.join(", "),
+    keywords: Array.isArray(tags) && tags.length ? tags.join(", ") : undefined,
 };
 ---
 
 <BaseLayout
-    title={title}
+    title={`${title} | Imprimibles Educativos`}
     description={description}
     ogImage={ogImage}
     ogType="article"
 >
-    <head slot="head">
+    <Fragment slot="head">
         <link rel="canonical" href={pageUrl} />
         <meta property="og:url" content={pageUrl} />
-        <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        ></script>
-    </head>
-
-    <article class="max-w-3xl mx-auto">
-        <h1 class="text-3xl font-bold mb-4">{title}</h1>
-
+        <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
         {
-            cover && (
-                <img
-                    src={cover.src ?? cover}
-                    alt={title}
-                    class="rounded-2xl mb-6 aspect-[4/3] object-cover"
-                    loading="eager"
-                />
+            pdfUrl && (
+                <link rel="alternate" type="application/pdf" href={pdfUrl} />
             )
         }
+    </Fragment>
 
-        <p class="mb-4">{description}</p>
-
-        <ul class="text-sm opacity-80 mb-6 space-y-1">
-            <li><strong>Categoría:</strong> {category}</li>
-            <li>
-                <strong>Fecha:</strong>
-                {new Date(date).toLocaleDateString("es-ES")}
-            </li>
+    <article class="mx-auto max-w-4xl px-4 py-8">
+        <!-- Cabecera (idéntica) -->
+        <header class="mb-6">
+            <h1
+                class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900"
+            >
+                {title}
+            </h1>
             {
-                tags.length ? (
-                    <li>
-                        <strong>Etiquetas:</strong> {tags.join(", ")}
-                    </li>
-                ) : null
+                description && (
+                    <p class="mt-2 text-slate-600 max-w-prose">{description}</p>
+                )
             }
-        </ul>
+            {
+                date && (
+                    <p class="mt-2 text-xs text-slate-500">
+                        Publicado el{" "}
+                        <time datetime={new Date(date).toISOString()}>
+                            {new Date(date).toLocaleDateString("es-ES", {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                            })}
+                        </time>
+                    </p>
+                )
+            }
+        </header>
 
-        <div class="flex gap-3">
-            <a
-                href="/recursos"
-                class="inline-flex items-center px-4 py-2 rounded-xl border hover:shadow-sm"
-                >← Volver</a
+        <!-- Portada (mismo bloque: fondo claro, contain, alturas) -->
+        <section
+            class="rounded-2xl border border-slate-200 bg-white/80 p-4 md:p-6"
+        >
+            <div
+                class="flex items-center justify-center min-h-[280px] md:min-h-[360px]"
             >
-            <a
-                href={pdfUrl}
-                class="inline-flex items-center px-4 py-2 rounded-xl border hover:shadow-sm"
-                >📥 Descargar PDF</a
+                {
+                    cover ? (
+                        typeof cover === "object" && "src" in cover ? (
+                            <Image
+                                src={cover}
+                                alt={`Portada de "${title}"`}
+                                width={1200}
+                                height={900}
+                                fit="contain"
+                                loading="eager"
+                                fetchpriority="high"
+                                class="w-auto max-h-[420px]"
+                            />
+                        ) : (
+                            <img
+                                src={String(cover)}
+                                alt={`Portada de "${title}"`}
+                                loading="eager"
+                                decoding="async"
+                                class="w-auto max-h-[420px] object-contain"
+                                width="1200"
+                                height="900"
+                            />
+                        )
+                    ) : (
+                        <img
+                            src="/images/placeholder.svg"
+                            alt={title}
+                            loading="lazy"
+                            class="w-auto max-h-[420px] object-contain"
+                            width="1200"
+                            height="900"
+                        />
+                    )
+                }
+            </div>
+        </section>
+
+        <!-- Detalles + CTA (clonado de imprimibles, adaptado a category/tags) -->
+        <section class="mt-6 rounded-2xl bg-slate-50 border p-4 md:p-6">
+            <h2
+                class="text-sm font-semibold text-slate-500 mb-3 uppercase tracking-wide"
             >
-        </div>
+                Detalles
+            </h2>
+
+            <div class="flex flex-wrap gap-2 text-sm">
+                {
+                    category && (
+                        <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-slate-700">
+                            {category}
+                        </span>
+                    )
+                }
+                {
+                    Array.isArray(tags) &&
+                        tags.map((t) => (
+                            <span class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-600">
+                                #{t}
+                            </span>
+                        ))
+                }
+            </div>
+
+            {
+                pdfHref && (
+                    <div class="mt-5">
+                        <a
+                            href={pdfHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center gap-2 rounded-full bg-indigo-600 text-white px-6 py-3 text-sm font-medium hover:bg-indigo-700 transition"
+                            aria-label={`Descargar ${title} en PDF`}
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="icon"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                            >
+                                <>
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                                    <path d="M14 2v6h6" />
+                                    <path d="M10 13h4M8 17h8" />
+                                </>
+                            </svg>
+                            Descargar PDF
+                        </a>
+                    </div>
+                )
+            }
+        </section>
+
+        <!-- (Opcional) Relacionados — mismo layout que imprimibles -->
+        {
+            related.length > 0 && (
+                <section class="mt-12">
+                    <h2 class="text-xl md:text-2xl font-semibold mb-4">
+                        Recursos relacionados
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {related.map((r) => {
+                            const rHref = `/recursos/${r.slug}`;
+                            const rTitle = r.data?.title ?? "Recurso";
+                            const isMeta =
+                                r.data?.cover &&
+                                typeof r.data.cover === "object" &&
+                                "src" in r.data.cover;
+
+                            return (
+                                <a
+                                    href={rHref}
+                                    data-astro-prefetch
+                                    class="block rounded-2xl overflow-hidden border hover:shadow-md transition bg-white"
+                                >
+                                    <div class="flex items-center justify-center bg-slate-100 min-h-[176px]">
+                                        {r.data?.cover ? (
+                                            isMeta ? (
+                                                <Image
+                                                    src={r.data.cover}
+                                                    alt={rTitle}
+                                                    width={600}
+                                                    height={400}
+                                                    fit="contain"
+                                                    loading="lazy"
+                                                    class="max-h-[176px] w-auto"
+                                                />
+                                            ) : (
+                                                <img
+                                                    src={String(r.data.cover)}
+                                                    alt={rTitle}
+                                                    loading="lazy"
+                                                    class="max-h-[176px] object-contain w-auto"
+                                                />
+                                            )
+                                        ) : (
+                                            <img
+                                                src="/images/placeholder.svg"
+                                                alt={rTitle}
+                                                loading="lazy"
+                                                class="max-h-[176px] object-contain w-auto"
+                                            />
+                                        )}
+                                    </div>
+                                    <div class="p-3">
+                                        <h3 class="font-semibold line-clamp-2">
+                                            {rTitle}
+                                        </h3>
+                                        <p class="text-sm text-slate-500 line-clamp-2">
+                                            {r.data?.description}
+                                        </p>
+                                        <div class="mt-2 text-xs text-slate-500">
+                                            {r.data?.category && (
+                                                <span>{r.data.category}</span>
+                                            )}
+                                            {Array.isArray(r.data?.tags) &&
+                                                r.data.tags.length > 0 && (
+                                                    <span>
+                                                        {" "}
+                                                        · #{r.data.tags[0]}
+                                                    </span>
+                                                )}
+                                        </div>
+                                    </div>
+                                </a>
+                            );
+                        })}
+                    </div>
+                </section>
+            )
+        }
     </article>
+
+    <style is:global>
+        .icon {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
+    </style>
 </BaseLayout>
