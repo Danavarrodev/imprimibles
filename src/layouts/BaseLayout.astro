@@ -1,6 +1,5 @@
 ---
 import "../styles/global.css";
-import Analytics from '@vercel/analytics/astro'
 /** Props configurables desde cada página */
 const {
   title = "Imprimibles Educativos",
@@ -12,7 +11,7 @@ const {
 
 /** Entorno y URLs */
 const isProd = import.meta.env.MODE === "production";
-const site = Astro.site ?? "https://imprimibles.vercel.app";
+const site = Astro.site ?? "https://imprimibleseduca.com";
 function normalizeCanonical(u: string): string {
   const url = new URL(u);
   if (url.pathname !== "/") {
@@ -23,7 +22,6 @@ function normalizeCanonical(u: string): string {
 
 const rawCanonical = Astro.url?.href ?? new URL("/", site).href;
 const canonical = normalizeCanonical(rawCanonical);
-
 
 /** Asegura ogImage absoluto */
 const absOg = ogImage.startsWith("http")
@@ -38,7 +36,7 @@ const orgJsonLd = {
   name: "Imprimibles Educativos",
   url: site,
   logo: new URL("/icon.svg", site).href,
-  image: new URL("/og.png", site).href
+  image: new URL("/og.png", site).href,
 };
 ---
 
@@ -92,26 +90,44 @@ const orgJsonLd = {
     <!-- Evita indexación en no-prod -->
     {!isProd && <meta name="robots" content="noindex,nofollow" />}
 
-
     {
       isProd && (
         <>
-          <script
-            async
-            src="https://www.googletagmanager.com/gtag/js?id=G-4Z6D976G11"
-          />
+          {/* Google Tag Manager */}
           <script>
-            {`window.dataLayer = window.dataLayer || [];
-         function gtag(){dataLayer.push(arguments);}
-         gtag('js', new Date());
-         gtag('config', 'G-4Z6D976G11');`}
+            {(function () {
+              return `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id=GTM-56GPS87V'+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-56GPS87V');`;
+            })()}
           </script>
+          {/* End Google Tag Manager */}
         </>
       )
     }
   </head>
 
   <body class="h-full bg-slate-50 text-slate-900 antialiased flex flex-col">
+    {
+      isProd && (
+        <>
+          {/* Google Tag Manager (noscript) */}
+          <noscript>
+            <iframe
+              src="https://www.googletagmanager.com/ns.html?id=GTM-56GPS87V"
+              height="0"
+              width="0"
+              style="display:none;visibility:hidden"
+            />
+          </noscript>
+
+          {/* End Google Tag Manager (noscript) */}
+        </>
+      )
+    }
+
     <!-- Header -->
     <header
       class="sticky top-0 z-50 border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60"
