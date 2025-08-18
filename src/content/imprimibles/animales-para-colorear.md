@@ -1,6 +1,6 @@
 ---
 title: "Animales para colorear"
-description: "Hasta 11 láminas de animales para colorear y recortar. Actividad creativa para infantil."
+description: "Colección de 11 láminas de animales para colorear y recortar, pensada para infantil. Actividad creativa que fomenta la motricidad fina y la imaginación."
 subject: "arte"
 level: "infantil"
 tags: ["colorear", "recortar", "animales"]

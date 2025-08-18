@@ -1,6 +1,6 @@
 ---
 title: "Partes de la planta"
-description: "Imprimible para identificar raíz, tallo, hojas y flor. Incluye actividad de etiquetado."
+description: "Imprimible de ciencias naturales para identificar raíz, tallo, hojas y flor. Incluye actividad de etiquetado y coloreado para reforzar aprendizaje escolar."
 subject: "ciencias naturales"
 level: "primaria"
 tags: ["plantas", "biología", "etiquetar"]

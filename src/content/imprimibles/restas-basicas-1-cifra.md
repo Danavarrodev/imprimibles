@@ -1,6 +1,6 @@
 ---
 title: "Restas básicas de 1 cifra"
-description: "Ejercicios de resta para practicar operaciones sencillas en primaria."
+description: "Ejercicios imprimibles de restas de una cifra para primaria. Fichas con ejemplos visuales y actividades que ayudan a practicar operaciones básicas paso a paso."
 subject: "matemáticas"
 level: "primaria"
 tags: ["restas", "cálculo", "1º primaria"]

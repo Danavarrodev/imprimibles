@@ -1,6 +1,6 @@
 ---
 title: "Tablas de multiplicar del 1 al 10"
-description: "Imprimible para aprender y repasar las tablas del 1 al 10. Ideal para primaria."
+description: "Imprimible con las tablas de multiplicar del 1 al 10 en formato claro y visual. Úsalo como póster de clase o ficha de repaso para reforzar cálculo mental en primaria."
 subject: "matemáticas"
 level: "primaria"
 tags: ["multiplicación", "cálculo", "tablas"]

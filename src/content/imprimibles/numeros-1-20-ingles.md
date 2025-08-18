@@ -1,6 +1,6 @@
 ---
 title: "Números del 1 al 20 en inglés"
-description: "Actividad para aprender y repasar los números del 1 al 20 en inglés."
+description: "Actividad imprimible para aprender y repasar los números del 1 al 20 en inglés, con ejemplos gráficos y ejercicios para reforzar vocabulario en primaria."
 subject: "inglés"
 level: "primaria"
 tags: ["números", "vocabulario", "listening"]

@@ -1,6 +1,6 @@
 ---
 title: "Animales del mundo"
-description: "Ficha imprimible con ilustraciones y nombres de animales de todos los continentes."
+description: "Ficha imprimible con ilustraciones de animales de todos los continentes, con espacio para escribir datos curiosos y aprender geografía de forma divertida."
 tags: ["ciencias", "primaria"]
 pdf: "/pdfs/animales-del-mundo.pdf"
 subject: "ciencias naturales"

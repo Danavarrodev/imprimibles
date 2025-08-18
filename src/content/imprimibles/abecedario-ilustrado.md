@@ -1,6 +1,6 @@
 ---
 title: "Abecedario ilustrado"
-description: "Láminas con todas las letras del abecedario acompañadas de dibujos representativos."
+description: "Láminas del abecedario ilustrado con cada letra acompañada de dibujos representativos. Ideal para trabajar la lectoescritura en infantil."
 tags: ["lengua", "infantil"]
 pdf: "/pdfs/abecedario-ilustrado.pdf"
 subject: "lengua"

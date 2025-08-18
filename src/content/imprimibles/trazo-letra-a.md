@@ -1,6 +1,6 @@
 ---
 title: "Trazo de la letra A"
-description: "Fichas de trazo de la letra A con líneas guía para trabajar la motricidad fina."
+description: "Fichas de trazo de la letra A en mayúscula y minúscula con líneas guía y flechas. Actividad para infantil que desarrolla la motricidad fina y la lectoescritura."
 subject: "lengua"
 level: "infantil"
 tags: ["trazo", "abecedario", "lectoescritura"]

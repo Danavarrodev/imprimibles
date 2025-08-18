@@ -1,6 +1,6 @@
 ---
 title: "Sumas básicas de 1 cifra"
-description: "Fichas de sumas sencillas para iniciarse en el cálculo mental. Descarga e imprime."
+description: "Fichas de sumas de una sola cifra para iniciarse en el cálculo mental. Incluyen actividades progresivas y visuales que ayudan a comprender las operaciones básicas."
 subject: "matemáticas"
 level: "primaria"
 tags: ["sumas", "cálculo", "1º primaria"]

@@ -1,6 +1,6 @@
 ---
 title: "Sílabas MA ME MI MO MU"
-description: "Imprimible para practicar sílabas MA-ME-MI-MO-MU con lectura y escritura."
+description: "Fichas imprimibles para practicar las sílabas MA, ME, MI, MO, MU con actividades de lectura, copia y escritura que refuerzan la velocidad lectora y la escritura autónoma."
 subject: "lengua"
 level: "primaria"
 tags: ["sílabas", "lectura", "escritura"]

@@ -1,6 +1,6 @@
 ---
 title: "Mapa de España: comunidades autónomas"
-description: "Ficha para aprender y colorear las comunidades autónomas de España."
+description: "Mapa político de España para colorear y aprender las 17 comunidades autónomas y sus capitales. Actividad de repaso ideal para primaria y secundaria."
 subject: "ciencias sociales"
 level: "primaria"
 tags: ["mapas", "geografía", "comunidades"]
