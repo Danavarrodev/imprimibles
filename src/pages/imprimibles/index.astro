@@ -3,16 +3,11 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import CardImprimible from "../../components/CardImprimible.astro";
 
-// Contenido
-const all = await getCollection("imprimibles");
-
-// Opciones filtros
-const subjects = Array.from(new Set(all.map((x) => x.data.subject)))
-  .filter(Boolean)
-  .sort();
-const levels = Array.from(new Set(all.map((x) => x.data.level)))
-  .filter(Boolean)
-  .sort();
+// Dataset (excluye borradores y ordena por fecha DESC)
+const all = (await getCollection("imprimibles"))
+  .filter((x) => !x.data?.draft)
+  .map((x) => ({ ...x, __ts: new Date(x.data?.date || 0).getTime() }))
+  .sort((a, b) => b.__ts - a.__ts);
 
 const EAGER_COUNT = 12;
 
@@ -27,19 +22,28 @@ const items = all.map((x) => ({
   pdf: x.data.pdf,
 }));
 
-// dominio para JSON-LD
+// Opciones filtros (sobre items visibles)
+const subjects = Array.from(new Set(items.map((x) => x.subject)))
+  .filter(Boolean)
+  .sort((a, b) => a.localeCompare(b, "es"));
+const levels = Array.from(new Set(items.map((x) => x.level)))
+  .filter(Boolean)
+  .sort((a, b) => a.localeCompare(b, "es"));
+
+// dominio para JSON-LD y canonical
 const site = (Astro.site ?? "https://imprimibleseduca.com")
   .toString()
   .replace(/\/$/, "");
+const canonical = `${site}/imprimibles`;
 ---
 
 <BaseLayout
   title="Imprimibles | Filtra por asignatura y nivel"
-  description="Descarga imprimibles por asignatura y nivel."
+  description="Descarga imprimibles por asignatura y nivel. Material educativo listo para imprimir y usar en clase o en casa."
 >
   <Fragment slot="head">
-    <!-- Canonical fijo -->
-    <link rel="canonical" href="https://imprimibleseduca.com/imprimibles" />
+    <!-- Canonical dinámico -->
+    <link rel="canonical" href={canonical} />
     <!-- Script para querystring = noindex -->
     <script is:inline>
       if (typeof window !== "undefined" && window.location.search.length > 1) {
@@ -50,7 +54,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
 
         const link = document.createElement("link");
         link.rel = "canonical";
-        link.href = "https://imprimibleseduca.com/imprimibles";
+        link.href = { canonical };
         document.head.appendChild(link);
       }
     </script>
@@ -75,6 +79,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
                 class="quick-chip rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
                 data-quick="subject"
                 data-value={s}
+                aria-label={`Filtrar por asignatura ${s}`}
               >
                 {s}
               </button>
@@ -86,6 +91,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
                 class="quick-chip rounded-full bg-gray-900 text-white px-3 py-1.5 text-sm hover:opacity-90"
                 data-quick="level"
                 data-value={l}
+                aria-label={`Filtrar por nivel ${l}`}
               >
                 {l}
               </button>
@@ -110,6 +116,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
                 id="f-subject"
                 class="rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900"
                 data-filter="subject"
+                aria-label="Filtro por asignatura"
               >
                 <option value="">Todas</option>
                 {subjects.map((s) => <option value={s}>{s}</option>)}
@@ -121,6 +128,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
                 id="f-level"
                 class="rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900"
                 data-filter="level"
+                aria-label="Filtro por nivel"
               >
                 <option value="">Todos</option>
                 {levels.map((l) => <option value={l}>{l}</option>)}
@@ -133,13 +141,15 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
               type="search"
               placeholder="Buscar por título…"
               class="w-64 rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900"
+              aria-label="Buscar por título"
             />
             <button
               type="button"
               id="f-clear"
               class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
-              >Limpiar</button
             >
+              Limpiar
+            </button>
           </div>
         </div>
       </div>
@@ -209,11 +219,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
           it.card.style.display = show ? "" : "none";
           if (show) visible++;
         }
-        if (visible === 0) {
-          $empty.classList.remove("hidden");
-        } else {
-          $empty.classList.add("hidden");
-        }
+        $empty.classList.toggle("hidden", visible !== 0);
       }
 
       [$subject, $level, $search].forEach(
@@ -224,6 +230,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
         $level.value = "";
         $search.value = "";
         apply();
+        window.scrollTo({ top: 0, behavior: "smooth" });
       });
 
       // accesos rápidos
@@ -234,10 +241,9 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
           if (type === "subject") $subject.value = val;
           if (type === "level") $level.value = val;
           apply();
-          window.scrollTo({
-            top: document.querySelector("section.sticky").offsetTop,
-            behavior: "smooth",
-          });
+          const sticky = document.querySelector("section.sticky");
+          if (sticky)
+            window.scrollTo({ top: sticky.offsetTop, behavior: "smooth" });
         });
       });
 

@@ -1,13 +1,13 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
+import CardImprimible from "../../../components/CardImprimible.astro";
 
 export async function getStaticPaths() {
     const entries = await getCollection("imprimibles");
     const subjects = Array.from(
         new Set(entries.map((e) => e.data?.subject).filter(Boolean)),
     );
-
     return subjects.map((s) => ({
         params: { subject: s }, // sin encodeURIComponent aquí
         props: { subjectValue: s },
@@ -17,14 +17,16 @@ export async function getStaticPaths() {
 const { subjectValue } = Astro.props;
 const subject = subjectValue;
 
-const site = Astro.site ?? "https://imprimibles.vercel.app";
-// URL canónica SIN slash final (consistencia global)
+const site = (Astro.site ?? "https://imprimibleseduca.com")
+    .toString()
+    .replace(/\/$/, "");
 const pageUrl = new URL(
     `/imprimibles/asignatura/${encodeURIComponent(subject)}`,
     site,
 ).href;
 
-const all = await getCollection("imprimibles");
+// Dataset (excluye borradores, ordena por fecha DESC)
+const all = (await getCollection("imprimibles")).filter((e) => !e.data?.draft);
 const list = all
     .filter((e) => e.data?.subject === subject)
     .sort((a, b) => {
@@ -32,6 +34,17 @@ const list = all
         const db = new Date(b.data?.date ?? 0).getTime();
         return db - da;
     });
+
+// Mapeo para CardImprimible (pasa cover tal cual: puede ser ImageMetadata)
+const items = list.map((e) => ({
+    slug: e.slug,
+    title: e.data.title,
+    description: e.data.description,
+    cover: e.data.cover,
+    subject: e.data.subject,
+    level: e.data.level,
+    pdf: e.data.pdf,
+}));
 
 const title = `Imprimibles de ${subject}`;
 const description = `Imprimibles de ${subject}. Descarga y utiliza en clase o en casa.`;
@@ -52,7 +65,7 @@ const itemListLd = {
     itemListElement: list.map((e, i) => ({
         "@type": "ListItem",
         position: i + 1,
-        url: new URL(`/imprimibles/${e.slug}`, site).href, // sin slash final
+        url: new URL(`/imprimibles/${e.slug}`, site).href,
         name: e.data?.title,
     })),
 };
@@ -81,7 +94,6 @@ const itemListLd = {
         {list.length === 0 && <meta name="robots" content="noindex, follow" />}
     </Fragment>
 
-    {/* Breadcrumbs visibles (UX + SEO) */}
     <nav aria-label="Breadcrumb" class="max-w-6xl mx-auto px-4 pt-6">
         <ol class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
             <li>
@@ -93,22 +105,21 @@ const itemListLd = {
     </nav>
 
     <section class="max-w-6xl mx-auto py-8 px-4">
-        <h1 class="text-2xl font-bold">{title}</h1>
-        <p class="text-slate-600 mt-1">{description}</p>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
+        <p class="text-slate-600 mt-2 max-w-2xl">{description}</p>
 
-        {/* Intro dinámico para SEO */}
         <div class="mt-4 text-slate-700 text-base leading-relaxed">
             <p>
                 Aquí encontrarás <strong>imprimibles de {subject}</strong> listos
-                para descargar y utilizar en el aula o en casa. Son recursos educativos
+                para descargar y utilizar en el aula o en casa. Recursos educativos
                 diseñados para facilitar el aprendizaje y hacer las actividades más
                 entretenidas.
             </p>
         </div>
 
         {
-            list.length === 0 ? (
-                <p class="mt-6 text-slate-600">
+            items.length === 0 ? (
+                <p class="mt-8 text-slate-600">
                     Aún no hay imprimibles en esta asignatura.
                 </p>
             ) : (
@@ -116,43 +127,19 @@ const itemListLd = {
                     <h2 class="text-xl font-semibold mt-8 mb-4">
                         Recursos disponibles
                     </h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {list.map((e) => {
-                            const href = `/imprimibles/${e.slug}`; // sin slash final
-                            const cover = e.data?.cover ?? "/og.png";
-                            return (
-                                <a
-                                    href={href}
-                                    data-astro-prefetch
-                                    class="block rounded-2xl overflow-hidden border hover:shadow transition"
-                                    aria-label={`Ver ficha de ${e.data?.title}`}
-                                >
-                                    <img
-                                        src={cover}
-                                        alt={e.data?.title}
-                                        loading="lazy"
-                                        decoding="async"
-                                        class="w-full aspect-[4/3] object-cover"
-                                    />
-                                    <div class="p-3">
-                                        <h3 class="font-semibold line-clamp-2">
-                                            {e.data?.title}
-                                        </h3>
-                                        <p class="text-sm text-slate-500 line-clamp-2">
-                                            {e.data?.description}
-                                        </p>
-                                        <div class="mt-2 text-xs text-slate-500">
-                                            {e.data?.subject && (
-                                                <span>{e.data.subject}</span>
-                                            )}
-                                            {e.data?.level && (
-                                                <span> · {e.data.level}</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </a>
-                            );
-                        })}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {items.map((it, i) => (
+                            <CardImprimible
+                                slug={it.slug}
+                                title={it.title}
+                                description={it.description}
+                                cover={it.cover}
+                                subject={it.subject}
+                                level={it.level}
+                                pdf={it.pdf}
+                                eager={i < 12}
+                            />
+                        ))}
                     </div>
                 </>
             )

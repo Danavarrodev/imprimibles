@@ -23,7 +23,10 @@ const {
     eager = false,
 } = Astro.props;
 
-const site = Astro.site ?? "https://imprimibleseduca.com";
+const site = (Astro.site ?? "https://imprimibleseduca.com")
+    .toString()
+    .replace(/\/$/, "");
+
 function buildPdfUrl(p?: string) {
     if (!p) return null;
     const raw = p.startsWith("http") ? p : p.startsWith("/") ? p : `/${p}`;
@@ -31,17 +34,32 @@ function buildPdfUrl(p?: string) {
 }
 const pdfUrl = buildPdfUrl(pdf);
 
+// mismo dominio?
+function isSameOrigin(url?: string | null) {
+    try {
+        if (!url) return false;
+        return new URL(url).origin === new URL(site).origin;
+    } catch {
+        return false;
+    }
+}
+
 const canUseAstroImage = cover && typeof cover === "object" && "src" in cover;
+
+// atributos normalizados para filtrado
+const dataTitle = String(title || "").toLowerCase();
+const dataTags = (tags || []).map((t) => String(t).toLowerCase()).join(",");
 ---
 
 <article
     class="group rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden"
-    data-title={title}
+    data-title={dataTitle}
     data-category={category}
-    data-tags={tags.join(",")}
+    data-tags={dataTags}
 >
     <a
         href={`/recursos/${slug}/`}
+        data-astro-prefetch
         aria-label={`Ver ficha: ${title}`}
         class="block"
     >
@@ -120,16 +138,29 @@ const canUseAstroImage = cover && typeof cover === "object" && "src" in cover;
         <div class="mt-2 flex items-center gap-2">
             <span class="text-sm text-gray-500">Ver ficha</span>
             {
-                pdfUrl && (
-                    <a
-                        href={pdfUrl}
-                        class="text-sm underline hover:no-underline"
-                        data-gtm="file_download"
-                        download
-                    >
-                        Descargar PDF
-                    </a>
-                )
+                pdfUrl &&
+                    (isSameOrigin(pdfUrl) ? (
+                        <a
+                            href={pdfUrl}
+                            class="text-sm underline hover:no-underline"
+                            data-gtm="file_download"
+                            download
+                            aria-label={`Descargar PDF: ${title}`}
+                        >
+                            Descargar PDF
+                        </a>
+                    ) : (
+                        <a
+                            href={pdfUrl}
+                            class="text-sm underline hover:no-underline"
+                            data-gtm="file_download"
+                            target="_blank"
+                            rel="noopener"
+                            aria-label={`Abrir PDF externo: ${title}`}
+                        >
+                            Descargar PDF
+                        </a>
+                    ))
             }
         </div>
     </div>

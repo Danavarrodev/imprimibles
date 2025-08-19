@@ -17,8 +17,10 @@ const { entry } = Astro.props;
 const { title, description, cover, pdf, subject, level, date, tags } =
   entry.data;
 
-/** Utilidades */
-const site = Astro.site; // coherente con astro.config.mjs
+/** Utilidades: site con fallback y normalización */
+const site = (Astro.site ?? "https://imprimibleseduca.com")
+  .toString()
+  .replace(/\/$/, "");
 
 // Helper para convertir a URL absoluta (sirve para cover y pdf)
 function toAbs(u?: string | { src: string }) {
@@ -29,9 +31,8 @@ function toAbs(u?: string | { src: string }) {
   return new URL(s.startsWith("/") ? s : `/${s}`, site).href;
 }
 
-const pageUrl = new URL(`/imprimibles/${entry.slug}`, site).href;
-
-const absCover = toAbs(cover) ?? new URL("/og.png", site).href;
+const pageUrl = `${site}/imprimibles/${entry.slug}`;
+const absCover = toAbs(cover) ?? `${site}/og.png`;
 const ogImage = absCover;
 
 /** PDF absoluto (SEO/JSON-LD) */
@@ -46,8 +47,8 @@ const pdfHref = pdf
       : `/${String(pdf)}`
   : undefined;
 
-/** Relacionados (mismo subject o level) */
-const all = await getCollection("imprimibles");
+/** Relacionados (mismo subject o level) — excluye borradores */
+const all = (await getCollection("imprimibles")).filter((e) => !e.data?.draft);
 const related = all
   .filter((e) => e.slug !== entry.slug)
   .filter((e) => {
@@ -109,7 +110,7 @@ const breadcrumbsLd = {
       "@type": "ListItem",
       position: 1,
       name: "Imprimibles",
-      item: new URL("/imprimibles", site).href,
+      item: `${site}/imprimibles`,
     },
     { "@type": "ListItem", position: 2, name: title, item: pageUrl },
   ],
@@ -123,7 +124,7 @@ const relatedLd =
         itemListElement: related.map((r, i) => ({
           "@type": "ListItem",
           position: i + 1,
-          url: new URL(`/imprimibles/${r.slug}`, site).href,
+          url: `${site}/imprimibles/${r.slug}`,
           name: r.data?.title,
         })),
       }
@@ -154,6 +155,8 @@ function subjectIcon(label?: string) {
   ogType="article"
 >
   <Fragment slot="head">
+    <link rel="canonical" href={pageUrl} />
+    <meta property="og:url" content={pageUrl} />
     {pdfUrl && <link rel="alternate" type="application/pdf" href={pdfUrl} />}
 
     <script type="application/ld+json" set:html={JSON.stringify(learningLd)} />

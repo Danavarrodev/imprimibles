@@ -3,43 +3,48 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import CardRecurso from "../../components/CardRecurso.astro";
 
-// Dataset
-const all = await getCollection("recursos");
+// Dataset (excluye borradores y ordena por fecha DESC)
+const all = (await getCollection("recursos"))
+  .filter((x) => !x.data?.draft)
+  .map((x) => ({ ...x, __ts: new Date(x.data?.date || 0).getTime() }))
+  .sort((a, b) => b.__ts - a.__ts);
 
-// Listas únicas
-const categories = Array.from(new Set(all.map((x) => x.data.category)))
-  .filter(Boolean)
-  .sort((a, b) => a.localeCompare(b, "es"));
-const tags = Array.from(new Set(all.flatMap((x) => x.data.tags ?? [])))
-  .filter(Boolean)
-  .sort((a, b) => a.localeCompare(b, "es"));
-
-const EAGER_COUNT = 12;
-
-// Mapeo a items (como en imprimibles)
+// Mapeo a items
 const items = all.map((x) => ({
   slug: x.slug,
   title: x.data.title,
   description: x.data.description,
   cover: x.data.cover,
   category: x.data.category,
-  tags: x.data.tags ?? [],
+  // normaliza tags a minúsculas para el filtrado
+  tags: (x.data.tags ?? []).map((t: string) => t.toLowerCase()),
   pdf: x.data.pdf,
 }));
 
-// 🔗 dominio para JSON‑LD
-const site = (Astro.site ?? "https://imprimibleseduca.com")
-  .toString()
-  .replace(/\/$/, "");
+// Listas únicas (sobre items visibles)
+const categories = Array.from(new Set(items.map((x) => x.category)))
+  .filter(Boolean)
+  .sort((a, b) => a.localeCompare(b, "es"));
+
+const tags = Array.from(new Set(items.flatMap((x) => x.tags ?? [])))
+  .filter(Boolean)
+  .sort((a, b) => a.localeCompare(b, "es"));
+
+const EAGER_COUNT = 12;
+
+// 🔗 dominio para JSON‑LD y canonical
+const site = (Astro.site ?? "https://imprimibleseduca.com").toString().replace(/\/$/, "");
+const canonical = `${site}/recursos`;
 ---
 
 <BaseLayout
   title="Recursos | Plantillas y materiales útiles"
   description="Encuentra recursos descargables para el día a día. Filtra por categoría y etiqueta."
+  ogType="website"
 >
   <Fragment slot="head">
-    <!-- Canonical fijo -->
-    <link rel="canonical" href="https://imprimibleseduca.com/recursos" />
+    <!-- Canonical dinámico -->
+    <link rel="canonical" href={canonical} />
     <!-- Noindex en variantes con querystring -->
     <script is:inline>
       if (typeof window !== "undefined" && window.location.search.length > 1) {
@@ -50,14 +55,14 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
 
         const link = document.createElement("link");
         link.rel = "canonical";
-        link.href = "https://imprimibleseduca.com/recursos";
+        link.href = {canonical};
         document.head.appendChild(link);
       }
     </script>
   </Fragment>
 
   <main class="bg-gray-50">
-    <!-- HERO (idéntico en layout) -->
+    <!-- HERO -->
     <section class="mx-auto max-w-7xl px-4 pt-10 pb-6">
       <div class="rounded-2xl bg-white/60 ring-1 ring-gray-200 p-6 md:p-8">
         <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
@@ -76,6 +81,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
                 class="quick-chip rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
                 data-quick="category"
                 data-value={c}
+                aria-label={`Filtrar por categoría ${c}`}
               >
                 {c}
               </button>
@@ -87,6 +93,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
                 class="quick-chip rounded-full bg-gray-900 text-white px-3 py-1.5 text-sm hover:opacity-90"
                 data-quick="tag"
                 data-value={t}
+                aria-label={`Filtrar por etiqueta ${t}`}
               >
                 #{t}
               </button>
@@ -96,7 +103,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
       </div>
     </section>
 
-    <!-- FILTROS sticky (mismo patrón) -->
+    <!-- FILTROS sticky -->
     <section class="sticky top-0 z-10 border-b border-gray-200 bg-white/90 backdrop-blur">
       <div class="mx-auto max-w-7xl px-4 py-3">
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -107,6 +114,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
                 id="f-category"
                 class="rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900"
                 data-filter="category"
+                aria-label="Filtro por categoría"
               >
                 <option value="">Todas</option>
                 {categories.map((c) => <option value={c}>{c}</option>)}
@@ -118,6 +126,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
                 id="f-tag"
                 class="rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900"
                 data-filter="tag"
+                aria-label="Filtro por etiqueta"
               >
                 <option value="">Todas</option>
                 {tags.map((t) => <option value={t}>{t}</option>)}
@@ -130,6 +139,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
               type="search"
               placeholder="Buscar por título…"
               class="w-64 rounded-md border-gray-300 text-sm focus:border-gray-900 focus:ring-gray-900"
+              aria-label="Buscar por título"
             />
             <button
               type="button"
@@ -143,12 +153,9 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
       </div>
     </section>
 
-    <!-- GRID (mismas columnas y gaps) -->
+    <!-- GRID -->
     <section class="mx-auto max-w-7xl px-4 py-8">
-      <div
-        id="cards"
-        class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-      >
+      <div id="cards" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {
           items.map((it, i) => (
             <CardRecurso
@@ -165,16 +172,13 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
         }
       </div>
 
-      <div
-        id="empty"
-        class="hidden mt-10 rounded-xl border border-dashed p-12 text-center text-gray-600"
-      >
+      <div id="empty" class="hidden mt-10 rounded-xl border border-dashed p-12 text-center text-gray-600">
         No hay resultados con esos filtros.
       </div>
     </section>
   </main>
 
-  <!-- Script de filtrado (calcado al de imprimibles, adaptado) -->
+  <!-- Script de filtrado -->
   <script is:raw>
     (function () {
       const $cards = document.getElementById("cards");
@@ -214,6 +218,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
         $tag.value = "";
         $search.value = "";
         apply();
+        window.scrollTo({ top: 0, behavior: "smooth" });
       });
 
       // Accesos rápidos
@@ -225,9 +230,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
           if (type === "tag") $tag.value = val;
           apply();
           const sticky = document.querySelector("section.sticky");
-          if (sticky) {
-            window.scrollTo({ top: sticky.offsetTop, behavior: "smooth" });
-          }
+          if (sticky) window.scrollTo({ top: sticky.offsetTop, behavior: "smooth" });
         });
       });
 
@@ -239,7 +242,7 @@ const site = (Astro.site ?? "https://imprimibleseduca.com")
     .quick-chip:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
   </style>
 
-  <!-- JSON-LD: listado de recursos (idéntico formato) -->
+  <!-- JSON-LD: listado de recursos -->
   <script
     type="application/ld+json"
     set:html={JSON.stringify({
