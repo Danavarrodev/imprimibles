@@ -5,10 +5,10 @@ import "../styles/global.css";
 const {
   title = "Imprimibles Educativos",
   description = "Recursos listos para imprimir",
-  ogImage = "/og.png",          // puede ser string o ImageMetadata
-  ogType = "website",           // usa "article" en fichas
-  twitterSite = "",             // ej: "@tuusuario" (opcional)
-  canonicalUrl,                 // si se pasa, tiene prioridad
+  ogImage = "/og.png",
+  ogType = "website",
+  twitterSite = "",
+  canonicalUrl,
 } = Astro.props;
 
 /** Entorno y URLs */
@@ -41,11 +41,11 @@ const orgJsonLd = {
   "@id": `${site}#organization`,
   name: "Imprimibles Educativos",
   url: site,
-  logo: new URL("/icon.svg", site).href,
+  logo: new URL("/logo.png", site).href,
   image: new URL("/og.png", site).href,
 };
 
-/** JSON‑LD de WebSite + SearchAction (mejora sitelinks search box) */
+/** JSON‑LD de WebSite + SearchAction */
 const webSiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
@@ -73,9 +73,12 @@ const webSiteJsonLd = {
 
     <link rel="canonical" href={canonical} />
 
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Favicons -->
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="512x512" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+
     <meta name="theme-color" content="#111827" />
 
     <meta name="description" content={description} />
@@ -93,6 +96,7 @@ const webSiteJsonLd = {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={absOg} />
 
+    <!-- JSON-LD -->
     <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
     <script type="application/ld+json" set:html={JSON.stringify(webSiteJsonLd)} />
 
@@ -104,11 +108,11 @@ const webSiteJsonLd = {
       <>
         {/* Google Tag Manager */}
         <script is:inline>
-          {(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
           j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-          })(window,document,'script','dataLayer','GTM-586PS87V');}
+          })(window,document,'script','dataLayer','GTM-586PS87V');
         </script>
         {/* End Google Tag Manager */}
       </>
