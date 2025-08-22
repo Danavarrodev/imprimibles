@@ -26,15 +26,12 @@ const latestMixed = [
   .sort((a, b) => b.__ts - a.__ts)
   .slice(0, EAGER_COUNT);
 
-// Capitalizar
-function capitalize(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
+
 
 const subjects = Array.from(
   new Set(imprimibles.map((i) => i.data.subject).filter(Boolean)),
 )
-  .map(capitalize)
+
   .sort((a, b) => a.localeCompare(b, "es"));
 
 // --- ICONOS ---
