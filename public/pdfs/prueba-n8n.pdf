@@ -1,0 +1,1 @@
+{{$node["Extract from File1"].json.data}}
