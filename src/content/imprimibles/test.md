@@ -5,7 +5,7 @@ subject: lengua
 level: primaria
 tags: [sumas, pdf]
 cover: "/images/imprimibles/test/cover.jpg"
-pdf: "/pdfs/test/recurso.pdf"
+pdf: "/pdfs/test/prueba-n8n.pdf"
 date: "2025-08-22"
 draft: false
 ---
